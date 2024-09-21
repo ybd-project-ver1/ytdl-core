@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "lib": ["ES2023"],
+        "types": ["jest"],
+        "outDir": "./package",
+        "rootDir": "./src",
+        "allowJs": true,
+        "declaration": true,
+        "sourceMap": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "importHelpers": false,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "paths": {
+            "@/*": ["./src/*"]
+        }
+    },
+    "include": ["src/*.ts", "src/**/*", "src/cache/files/*"],
+    "exclude": ["node_modules", "package", "test", "reference"]
+}
