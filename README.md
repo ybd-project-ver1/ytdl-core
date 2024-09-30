@@ -228,8 +228,9 @@ To generate tokens using Cobalt, execute the following command.
 
 ```bash
 git clone https://github.com/imputnet/cobalt
-cd cobalt
-npm install
+cd cobalt/api/src
+npm install -g pnpm
+pnpm install
 npm run token:youtube
 ```
 
