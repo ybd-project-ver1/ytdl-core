@@ -1,0 +1,14 @@
+{
+    "name": "oauth2-generate-own",
+    "version": "1.0.0",
+    "description": "OAuth2",
+    "main": "generateOwn.js",
+    "license": "MIT",
+    "scripts": {
+        "start": "node ./src/generate/generateOwn.js"
+    },
+    "dependencies": {
+        "@inquirer/prompts": "^5.5.0",
+        "got": "^11.8.5"
+    }
+}

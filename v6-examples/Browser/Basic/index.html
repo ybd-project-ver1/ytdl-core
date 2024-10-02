@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="prefetch" href="https://cdn.jsdelivr.net/npm/@ybd-project/ytdl-core@latest/bundle/browser.min.js" />
+        <title>@ybd-project/ytdl-core Test</title>
+    </head>
+    <body>
+        <h1>@ybd-project/ytdl-core Browser Test</h1>
+        <div id="resultsOutput"></div>
+        <!-- If you are not using Next.js or similar, use the bundled version. -->
+        <script type="module" defer>
+            import Ytdl from 'https://cdn.jsdelivr.net/npm/@ybd-project/ytdl-core@latest/bundle/browser.min.js';
+
+            // Use proxies to avoid CORS. (In this example, we use original proxy.)
+            const BASE_URL = 'https://server.originalProxy.com',
+                ytdl = new Ytdl.YtdlCore({
+                    logDisplay: ['debug', 'info', 'success', 'warning', 'error'],
+                    disablePoTokenAutoGeneration: true,
+                    // disableBasicCache: true,
+                    originalProxy: {
+                        base: BASE_URL,
+                        download: BASE_URL + '/download',
+                        urlQueryName: 'url',
+                    },
+                }),
+                OUTPUT_ELEMENT = document.getElementById('resultsOutput');
+
+            window.ytdl = ytdl;
+
+            ytdl.getFullInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+                .then((results) => {
+                    OUTPUT_ELEMENT.innerHTML = `<p>Video Title: ${results.videoDetails.title}</p>`;
+                })
+                .catch((err) => {
+                    console.error(err);
+                    OUTPUT_ELEMENT.innerHTML = err;
+                });
+        </script>
+    </body>
+</html>

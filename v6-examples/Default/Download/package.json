@@ -1,0 +1,13 @@
+{
+    "name": "download",
+    "version": "1.0.0",
+    "description": "Download video",
+    "main": "streamMp3.js",
+    "license": "MIT",
+    "scripts": {
+        "start": "node ./src/audio/streamMp3.js"
+    },
+    "dependencies": {
+        "@ybd-project/ytdl-core": "latest"
+    }
+}

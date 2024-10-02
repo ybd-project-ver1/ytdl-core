@@ -1,0 +1,13 @@
+{
+    "name": "get-info",
+    "version": "1.0.0",
+    "description": "GetInfo Example",
+    "main": "index.js",
+    "license": "MIT",
+    "scripts": {
+        "start": "node ./src/index.js"
+    },
+    "dependencies": {
+        "@ybd-project/ytdl-core": "latest"
+    }
+}

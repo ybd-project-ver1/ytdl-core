@@ -1,0 +1,13 @@
+{
+    "name": "vercel-function-example",
+    "version": "1.0.0",
+    "private": true,
+    "dependencies": {
+        "@ybd-project/ytdl-core": "latest"
+    },
+    "devDependencies": {
+        "@types/node": "latest",
+        "@vercel/node": "^3.0.24",
+        "typescript": "^5"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "name": "proxy",
+    "version": "1.0.0",
+    "description": "Proxy Example",
+    "main": "index.js",
+    "license": "MIT",
+    "scripts": {
+        "start": "node ./src/index.js"
+    },
+    "dependencies": {
+        "@ybd-project/ytdl-core": "latest",
+        "undici": "^6.19.8"
+    }
+}
