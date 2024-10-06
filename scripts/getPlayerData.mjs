@@ -40,7 +40,9 @@ function adaptToPlayerJson(id) {
         });
 }
 
-fetch('https://www.youtube.com/iframe_api')
+fetch('https://www.youtube.com/iframe_api', {
+    cache: 'no-store'
+})
     .then((res) => res.text())
     .then((data) => {
         const PLAYER_ID = getPlayerId(data);
