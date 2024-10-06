@@ -43,7 +43,7 @@ ytdl.download<YTDL_DefaultStreamType>('https://www.youtube.com/watch?v=ID', { fi
 * **Agent:** Proxy adaptation to requests by YtdlCore has been discontinued due to specification issues.
 * **PoToken:** Stop using `youtube-po-token-generator` to generate PoToken, and use [`LuanRT/BgUtils`](https://github.com/LuanRT/BgUtils) instead, because it cannot generate PoToken correctly. (Experimental, not available in the browser and serverless versions)
 * **Player:** To improve the stability of obtaining player IDs, the following two things were implemented.
-    1. If it could not be retrieved, ytdl-core retrieve the latest player ID from GitHub ([api.github.com/repos/ybd-project/ytdl-core/contents/data/player.json?ref=dev](https://api.github.com/repos/ybd-project/ytdl-core/dev/contents/data/player.json?ref=dev)) to get the latest player ID. **(This JSON is updated every day.)**
+    1. If it could not be retrieved, ytdl-core retrieve the latest player ID from GitHub ([api.github.com/repos/ybd-project/ytdl-core/contents/data/player/data.json?ref=dev](https://api.github.com/repos/ybd-project/ytdl-core/contents/data/player/data.json?ref=dev)) to get the latest player ID. **(This JSON is updated every day.)**
     2. If the player ID could not be obtained from GitHub, the latest player ID at that time obtained at build time is used.
 * **VideoDetails:** Added `playabilityStatus` to video details. The value `OK` takes precedence.
 * **Cache:** Added `disableBasicCache` option to disable basic cache.

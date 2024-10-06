@@ -1,6 +1,6 @@
 import { Platform } from '@/platforms/Platform';
 import { YtdlCore_Cache } from '@/platforms/utils/Classes';
-import { VERSION, REPO_URL, ISSUES_URL } from '@/utils/Constants';
+import { VERSION, ISSUES_URL, USER_NAME, REPO_NAME } from '@/utils/Constants';
 
 class CacheWithCacheStorage implements YtdlCore_Cache {
     isDisabled: boolean = false;
@@ -129,7 +129,10 @@ Platform.load({
     },
     info: {
         version: VERSION,
-        repoUrl: REPO_URL,
+        repo: {
+            user: USER_NAME,
+            name: REPO_NAME,
+        },
         issuesUrl: ISSUES_URL,
     },
 });

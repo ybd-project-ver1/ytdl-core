@@ -26,7 +26,10 @@ interface YtdlCore_Shim {
     };
     info: {
         version: string;
-        repoUrl: string;
+        repo: {
+            user: string;
+            name: string;
+        };
         issuesUrl: string;
     };
 }

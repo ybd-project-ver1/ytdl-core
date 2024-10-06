@@ -186,13 +186,14 @@ let updateWarnTimes = 0;
 let lastUpdateCheck = 0;
 type GitHubPkgResponse = { content: string; encoding: BufferEncoding };
 function checkForUpdates() {
-    const YTDL_NO_UPDATE = Platform.getShim().options.other.noUpdate;
+    const SHIM = Platform.getShim(),
+        YTDL_NO_UPDATE = SHIM.options.other.noUpdate;
 
     if (!YTDL_NO_UPDATE && Date.now() - lastUpdateCheck >= UPDATE_INTERVAL) {
         lastUpdateCheck = Date.now();
 
-        const GITHUB_URL = 'https://api.github.com/repos/ybd-project/ytdl-core/contents/package.json';
-        Fetcher.request<GitHubPkgResponse>(GITHUB_URL, {
+        const PKG_GITHUB_API_URL = `https://api.github.com/repos/${SHIM.info.repo.user}/${SHIM.info.repo.name}/contents/package.json`;
+        Fetcher.request<GitHubPkgResponse>(PKG_GITHUB_API_URL, {
             requestOptions: { headers: { 'User-Agent': 'Chromium";v="112", "Microsoft Edge";v="112", "Not:A-Brand";v="99' } },
         }).then(
             (response) => {
@@ -200,8 +201,7 @@ function checkForUpdates() {
                     throw new Error('No content in response');
                 }
 
-                const BUFFER = Buffer.from(response.content, response.encoding),
-                    PKG_FILE = JSON.parse(BUFFER.toString('ascii'));
+                const PKG_FILE = JSON.parse(atob(response.content));
 
                 if (PKG_FILE.version !== VERSION && updateWarnTimes++ < 5) {
                     Logger.warning('@ybd-project/ytdl-core is out of date! Update with "npm install @ybd-project/ytdl-core@latest".');

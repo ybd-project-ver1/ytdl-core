@@ -6,14 +6,16 @@ import { Platform } from '@/platforms/Platform';
 import { CacheWithMap, YtdlCore_Cache } from '@/platforms/utils/Classes';
 import { AvailableCacheFileNames, FileCacheOptions } from '@/platforms/types/FileCache';
 
-import { VERSION, REPO_URL, ISSUES_URL } from '@/utils/Constants';
+import { VERSION, ISSUES_URL, USER_NAME, REPO_NAME } from '@/utils/Constants';
 import { Logger } from '@/utils/Log';
 
-import('./PoToken.mjs').then((m) => {
-    const SHIM = Platform.getShim();
-    SHIM.poToken = m.generatePoToken;
-    Platform.load(SHIM);
-}).catch(() => {});
+import('./PoToken.mjs')
+    .then((m) => {
+        const SHIM = Platform.getShim();
+        SHIM.poToken = m.generatePoToken;
+        Platform.load(SHIM);
+    })
+    .catch(() => {});
 
 class FileCache implements YtdlCore_Cache {
     isDisabled: boolean = false;
@@ -166,7 +168,10 @@ Platform.load({
     },
     info: {
         version: VERSION,
-        repoUrl: REPO_URL,
+        repo: {
+            user: USER_NAME,
+            name: REPO_NAME,
+        },
         issuesUrl: ISSUES_URL,
     },
 });
