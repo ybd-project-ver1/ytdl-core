@@ -71,7 +71,7 @@ async function _getBasicInfo(id: string, options: YTDL_GetInfoOptions, isFromGet
         await options.oauth2.refreshAccessToken();
     }
 
-    if (!options.poToken) {
+    if (!options.poToken && !options.disablePoTokenAutoGeneration) {
         Logger.warning('Specify poToken for stable and fast operation. See README for details.');
         Logger.info('Automatically generates poToken, but stable operation cannot be guaranteed.');
 

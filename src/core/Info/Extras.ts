@@ -1,7 +1,6 @@
-import type { YT_CompactVideoRenderer, YT_PlayerApiResponse, YT_NextApiResponse, YT_MicroformatRenderer, YT_VideoSecondaryInfoRenderer, YT_VideoOwnerRenderer, YT_VideoPrimaryInfoRenderer, YTDL_Media, YTDL_Author, YTDL_RelatedVideo, YTDL_Storyboard, YTDL_Chapter, YTDL_VideoDetails, YTDL_Hreflang } from '@/types';
+import type { YT_CompactVideoRenderer, YT_PlayerApiResponse, YT_NextApiResponse, YT_MicroformatRenderer, YT_VideoSecondaryInfoRenderer, YT_VideoOwnerRenderer, YT_VideoPrimaryInfoRenderer, YTDL_Media, YTDL_Author, YTDL_RelatedVideo, YTDL_Storyboard, YTDL_Chapter, YTDL_VideoDetails } from '@/types';
 
 import { Url } from '@/utils/Url';
-import utils from '@/utils/Utils';
 import { Logger } from '@/utils/Log';
 
 /* Reference: m3u8stream/parse-time.js */
@@ -73,7 +72,23 @@ function getRelativeTime(date: Date, locale = 'en') {
     }
 }
 
-function parseRelatedVideo(details: YT_CompactVideoRenderer, lang: YTDL_Hreflang): YTDL_RelatedVideo | null {
+function parseStringToNumber(input: string): number {
+    const SUFFIX = input.slice(-1).toUpperCase(),
+        VALUE = parseFloat(input.slice(0, -1));
+
+    switch (SUFFIX) {
+        case 'K':
+            return VALUE * 1000;
+        case 'M':
+            return VALUE * 1000000;
+        case 'B':
+            return VALUE * 1000000000;
+        default:
+            return parseFloat(input);
+    }
+}
+
+function parseRelatedVideo(details: YT_CompactVideoRenderer): YTDL_RelatedVideo | null {
     if (!details) {
         return null;
     }
@@ -88,13 +103,10 @@ function parseRelatedVideo(details: YT_CompactVideoRenderer, lang: YTDL_Hreflang
 
         viewCount = (/^\d/.test(viewCount) ? viewCount : shortViewCount).split(' ')[0];
 
-        const FORMATTER = new Intl.NumberFormat(lang, {
-                notation: 'compact',
-            }),
-            BROWSE_ENDPOINT = details.shortBylineText.runs[0].navigationEndpoint.browseEndpoint,
+        const BROWSE_ENDPOINT = details.shortBylineText.runs[0].navigationEndpoint.browseEndpoint,
             CHANNEL_ID = BROWSE_ENDPOINT.browseId,
             NAME = getText(details.shortBylineText),
-            USER = (BROWSE_ENDPOINT.canonicalBaseUrl || '').split('/').slice(-1)[0],
+            USER = decodeURIComponent((BROWSE_ENDPOINT.canonicalBaseUrl || '').split('/').slice(-1)[0] || ''),
             PUBLISHED_TEXT = getText(details.publishedTimeText),
             SHORT_VIEW_COUNT_TEXT = shortViewCount.split(' ')[0],
             VIDEO: YTDL_RelatedVideo = {
@@ -106,7 +118,7 @@ function parseRelatedVideo(details: YT_CompactVideoRenderer, lang: YTDL_Hreflang
                     name: NAME,
                     user: USER,
                     channelUrl: `https://www.youtube.com/channel/${CHANNEL_ID}`,
-                    userUrl: `https://www.youtube.com/user/${USER}`,
+                    userUrl: `https://www.youtube.com/` + (USER.includes('@') ? USER : 'user/' + USER),
                     thumbnails: (details.channelThumbnail.thumbnails || [])?.map((thumbnail) => {
                         thumbnail.url = new URL(thumbnail.url, Url.getBaseUrl()).toString();
                         return thumbnail;
@@ -114,7 +126,7 @@ function parseRelatedVideo(details: YT_CompactVideoRenderer, lang: YTDL_Hreflang
                     subscriberCount: null,
                     verified: isVerified(details.ownerBadges || []),
                 },
-                shortViewCountText: lang === 'en' ? SHORT_VIEW_COUNT_TEXT : FORMATTER.format(parseStringToNumber(SHORT_VIEW_COUNT_TEXT)),
+                shortViewCountText: SHORT_VIEW_COUNT_TEXT,
                 viewCount: parseInt(viewCount.replace(/,/g, '')),
                 lengthSeconds: details.lengthText ? Math.floor(parseTimestamp(getText(details.lengthText)) / 1000) : null,
                 thumbnails: details.thumbnail.thumbnails || [],
@@ -124,25 +136,8 @@ function parseRelatedVideo(details: YT_CompactVideoRenderer, lang: YTDL_Hreflang
 
         return VIDEO;
     } catch (err) {
-        console.log(err);
         Logger.debug(`<error>Failed</error> to parse related video (ID: ${details?.videoId || 'Unknown'}): <error>${err}</error>`);
         return null;
-    }
-}
-
-function parseStringToNumber(input: string): number {
-    const SUFFIX = input.slice(-1).toUpperCase(),
-        VALUE = parseFloat(input.slice(0, -1));
-
-    switch (SUFFIX) {
-        case 'K':
-            return VALUE * 1000;
-        case 'M':
-            return VALUE * 1000000;
-        case 'B':
-            return VALUE * 1000000000;
-        default:
-            return parseFloat(input);
     }
 }
 
@@ -305,7 +300,7 @@ export default class InfoExtras {
         }
     }
 
-    static getRelatedVideos(info: YT_NextApiResponse | null, lang: YTDL_Hreflang): Array<YTDL_RelatedVideo> {
+    static getRelatedVideos(info: YT_NextApiResponse | null): Array<YTDL_RelatedVideo> {
         if (!info) {
             return [];
         }
@@ -322,7 +317,7 @@ export default class InfoExtras {
             const DETAILS = RESULT.compactVideoRenderer as YT_CompactVideoRenderer;
 
             if (DETAILS) {
-                const VIDEO = parseRelatedVideo(DETAILS, lang);
+                const VIDEO = parseRelatedVideo(DETAILS);
                 if (VIDEO) {
                     VIDEOS.push(VIDEO);
                 }
@@ -334,7 +329,7 @@ export default class InfoExtras {
                 }
 
                 for (const CONTENT of AUTOPLAY.contents) {
-                    const VIDEO = parseRelatedVideo(CONTENT.compactVideoRenderer, lang);
+                    const VIDEO = parseRelatedVideo(CONTENT.compactVideoRenderer);
                     if (VIDEO) {
                         VIDEOS.push(VIDEO);
                     }

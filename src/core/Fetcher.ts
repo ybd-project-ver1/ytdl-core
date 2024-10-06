@@ -67,11 +67,15 @@ class Fetcher {
             } catch {}
         }
 
-        const REQUEST_RESULTS = await this.fetch(url, {
-                method: requestOptions?.method || 'GET',
-                headers: requestOptions?.headers,
-                body: requestOptions?.body?.toString(),
-            }, true),
+        const REQUEST_RESULTS = await this.fetch(
+                url,
+                {
+                    method: requestOptions?.method || 'GET',
+                    headers: requestOptions?.headers,
+                    body: requestOptions?.body?.toString(),
+                },
+                true,
+            ),
             STATUS_CODE = REQUEST_RESULTS.status.toString(),
             LOCATION = REQUEST_RESULTS.headers.get('location') || null;
 

@@ -1,16 +1,68 @@
 # Changelog
 
-## v5.2.0 (2024/09/20) *Not released, planned.
+## v6.0.0 (2024/MM/DD) *Not released, planned.
 
 ### Features
 * **YtdlCore:** Support for use in browsers. (To use, import `@ybd-project/ytdl-core/browser`)
-* **YtdlCore:** Add a processing-optimized YtdlCore for deployment to serverless functions such as Vercel Functions (just use `@ybd-project/ytdl-core/serverless` when importing)
+* **YtdlCore:** Added a processing-optimized YtdlCore for deployment to serverless functions such as Vercel Functions. (just use `@ybd-project/ytdl-core/serverless` when importing)
+* **YtdlCore:** Changed to be able to import types used in YtdlCore. (To use, import `@ybd-project/ytdl-core/types`)
+* **YtdlCore:** Static methods such as the `getFullInfo` function have been eliminated in view of optional adaptations, etc.
+* **Stream:** Added option `streamType` to specify the type of stream to receive (ReadableStream or Readable (for Node.js)) in `download` functions, etc. (The type specification of the stream is done as follows)
+```ts
+import { YtdlCore, YTDL_NodejsStreamType } from '@ybd-project/ytdl-core';
 
-> [!NOTE]
-> YtdlCore for serverless functions no longer uses class instances, but individual functions. (No need to import `{ YtdlCore }`, just like `{ getFullInfo }`)
+const ytdl = new YtdlCore({
+    streamType: 'nodejs',
+});
 
-* **YtdlCore:** Changed to be able to import types used in YtdlCore (To use, import `@ybd-project/ytdl-core/types`)
-* **Search:** Supports search from YouTube
+ytdl.download<YTDL_NodejsStreamType>('https://www.youtube.com/watch?v=ID', { filter: 'audioandvideo' }).then((stream) => {
+    // If the default (ReadableStream), it cannot be piped.
+    stream.pipe(fs.createWriteStream(process.cwd() + '/results/video.mp4'));
+});
+
+// If not Node.js, import `YTDL_DefaultStreamType`.
+import { YtdlCore, YTDL_DefaultStreamType } from '@ybd-project/ytdl-core';
+
+const ytdl = new YtdlCore({
+    streamType: 'default',
+});
+
+ytdl.download<YTDL_DefaultStreamType>('https://www.youtube.com/watch?v=ID', { filter: 'audioandvideo' }).then((stream) => {
+    ...
+});
+```
+
+### Change
+* **Lang:** Remove the `lang` option and add the `hl` option.
+* **Country:** Add `gl` option.
+* **Debug:** Eliminated the use of the `YTDL_DEBUG` environment variable. (For debug log display, use the `logDisplay` option instead.)
+* **Log:** Added `logDisplay` option to specify the type of log to display.
+* **Options:** The `requestOptions` option is obsolete.
+* **Request:** Eliminate the use of the internal Undici package.
+* **Fetcher:** Add `fetcher` option to control requests. (Allows proxy adaptation, etc. (returns a Response object))
+* **Agent:** Proxy adaptation to requests by YtdlCore has been discontinued due to specification issues.
+* **PoToken:** Stop using `youtube-po-token-generator` to generate PoToken, and use [`LuanRT/BgUtils`](https://github.com/LuanRT/BgUtils) instead, because it cannot generate PoToken correctly. (Experimental, not available in the browser and serverless versions)
+* **Player:** To improve the stability of obtaining player IDs, the following two things were implemented.
+    1. If it could not be retrieved, ytdl-core retrieve the latest player ID from GitHub ([api.github.com/repos/ybd-project/ytdl-core/contents/data/player.json?ref=dev](https://api.github.com/repos/ybd-project/ytdl-core/dev/contents/data/player.json?ref=dev)) to get the latest player ID. **(This JSON is updated every day.)**
+    2. If the player ID could not be obtained from GitHub, the latest player ID at that time obtained at build time is used.
+* **VideoDetails:** Added `playabilityStatus` to video details. The value `OK` takes precedence.
+* **Cache:** Added `disableBasicCache` option to disable basic cache.
+* **Version:** Added `disableVersionCheck` option to disable version check (In `@ybd-project/ytdl-core`, the Node.js version and browser version are checked).
+
+### Bug Fixes
+* **Types:** Fixed wrong type issue.
+* **README:** Fixed incorrect README documentation.
+
+### Improvement
+* **YtdlCore:** Remove unnecessary packages and reduce package size.
+
+## v5.1.9, v5.1.9-2 (2024/09/22)
+
+### Features
+* **PoToken:** Added option `disablePoTokenAutoGeneration` to disable automatic generation of PoToken
+
+### Bug Fixes
+* **Bug:** Minor bug fixes
 
 ## v5.1.8 (2024/09/20)
 

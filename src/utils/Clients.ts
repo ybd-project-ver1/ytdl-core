@@ -418,7 +418,7 @@ class Clients {
     }
 
     static tv({ videoId, signatureTimestamp, options: { poToken, visitorData, oauth2, hl, gl } }: YTDL_ClientsParams) {
-        const CLIENT = INNERTUBE_CLIENTS.web,
+        const CLIENT = INNERTUBE_CLIENTS.tv,
             PAYLOAD = { ...INNERTUBE_BASE_PAYLOAD };
 
         PAYLOAD.videoId = videoId;

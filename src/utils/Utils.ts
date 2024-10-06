@@ -1,3 +1,4 @@
+import { Platform } from '@/platforms/Platform';
 import { Fetcher } from '@/core/Fetcher';
 
 import { VERSION } from '@/utils/Constants';
@@ -185,16 +186,20 @@ let updateWarnTimes = 0;
 let lastUpdateCheck = 0;
 type GitHubPkgResponse = { content: string; encoding: BufferEncoding };
 function checkForUpdates() {
-    const YTDL_NO_UPDATE = process.env.YTDL_NO_UPDATE;
+    const YTDL_NO_UPDATE = Platform.getShim().options.other.noUpdate;
 
     if (!YTDL_NO_UPDATE && Date.now() - lastUpdateCheck >= UPDATE_INTERVAL) {
         lastUpdateCheck = Date.now();
 
         const GITHUB_URL = 'https://api.github.com/repos/ybd-project/ytdl-core/contents/package.json';
-        return Fetcher.request<GitHubPkgResponse>(GITHUB_URL, {
+        Fetcher.request<GitHubPkgResponse>(GITHUB_URL, {
             requestOptions: { headers: { 'User-Agent': 'Chromium";v="112", "Microsoft Edge";v="112", "Not:A-Brand";v="99' } },
         }).then(
             (response) => {
+                if (!response.content) {
+                    throw new Error('No content in response');
+                }
+
                 const BUFFER = Buffer.from(response.content, response.encoding),
                     PKG_FILE = JSON.parse(BUFFER.toString('ascii'));
 
@@ -204,12 +209,10 @@ function checkForUpdates() {
             },
             (err) => {
                 Logger.warning('Error checking for updates:', err.message);
-                Logger.warning('You can disable this check by setting the `YTDL_NO_UPDATE` env variable.');
+                Logger.warning('It can be disabled by setting `noUpdate` to `true` in the YtdlCore options.');
             },
         );
     }
-
-    return null;
 }
 
 export { between, tryParseBetween, parseAbbreviatedNumber, cutAfterJS, lastUpdateCheck, checkForUpdates, getPropInsensitive, setPropInsensitive, generateClientPlaybackNonce };

@@ -11,14 +11,22 @@ import { FormatUtils } from '@/utils/Format';
 
 import { FormatParser } from './parser/Formats';
 import { _getBasicInfo } from './BasicInfo';
+import { getHtml5Player } from './parser/Html5Player';
 
 /* Private Constants */
 const CACHE = Platform.getShim().cache,
     SIGNATURE = new Signature();
 
 async function _getFullInfo(id: string, options: InternalDownloadOptions): Promise<YTDL_VideoInfo> {
-    const INFO: YTDL_VideoInfo = await _getBasicInfo(id, options, true),
-        FUNCTIONS = [];
+    const HTML5_PLAYER_PROMISE = getHtml5Player(options),
+        INFO: YTDL_VideoInfo = await _getBasicInfo(id, options, true),
+        FUNCTIONS = [],
+        HTML5_PLAYER = await HTML5_PLAYER_PROMISE;
+
+    if (HTML5_PLAYER.id && HTML5_PLAYER.body) {
+        await SIGNATURE.getDecipherFunctions(HTML5_PLAYER.id, HTML5_PLAYER.body);
+        await SIGNATURE.getNTransform(HTML5_PLAYER.id, HTML5_PLAYER.body);
+    }
 
     try {
         const FORMATS = INFO.formats as unknown as Array<YT_StreamingAdaptiveFormat>;

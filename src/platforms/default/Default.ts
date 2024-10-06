@@ -13,10 +13,9 @@ import('./PoToken.mjs').then((m) => {
     const SHIM = Platform.getShim();
     SHIM.poToken = m.generatePoToken;
     Platform.load(SHIM);
-})
+}).catch(() => {});
 
 class FileCache implements YtdlCore_Cache {
-    private timeouts: Map<string, NodeJS.Timeout> = new Map();
     isDisabled: boolean = false;
     cacheDir: string = path.resolve(__dirname, './.CacheFiles/');
 
@@ -33,7 +32,7 @@ class FileCache implements YtdlCore_Cache {
             const FILE_PATH = path.resolve(this.cacheDir, cacheName + '.txt'),
                 PARSED_DATA = JSON.parse(fs.readFileSync(FILE_PATH, 'utf8'));
 
-            if (Date.now() > PARSED_DATA.date) {
+            if (Date.now() > PARSED_DATA.expiration) {
                 return null;
             }
 
@@ -59,20 +58,10 @@ class FileCache implements YtdlCore_Cache {
             fs.writeFileSync(
                 path.resolve(this.cacheDir, cacheName + '.txt'),
                 JSON.stringify({
-                    date: Date.now() + options.ttl * 1000,
+                    expiration: Date.now() + options.ttl * 1000,
                     contents: data,
                 }),
             );
-
-            if (this.timeouts.has(cacheName)) {
-                clearTimeout(this.timeouts.get(cacheName)!);
-            }
-
-            const TIMEOUT = setTimeout(() => {
-                this.delete(cacheName);
-            }, options.ttl * 1000);
-
-            this.timeouts.set(cacheName, TIMEOUT);
 
             Logger.debug(`[ FileCache ]: <success>"${cacheName}"</success> is cached.`);
             return true;
@@ -109,11 +98,6 @@ class FileCache implements YtdlCore_Cache {
 
             fs.unlinkSync(FILE_PATH);
             Logger.debug(`[ FileCache ]: Cache key <blue>"${cacheName}"</blue> was deleted.`);
-
-            if (this.timeouts.has(cacheName)) {
-                clearTimeout(this.timeouts.get(cacheName)!);
-                this.timeouts.delete(cacheName);
-            }
 
             return true;
         } catch (err) {
@@ -154,10 +138,10 @@ Platform.load({
     server: true,
     cache: new CacheWithMap(),
     fileCache: new FileCache(),
-    fetcher: fetch,
+    fetcher: (url, options) => fetch(url, options),
     poToken: () => Promise.resolve({ poToken: '', visitorData: '' }),
-    default: {
-        options: {
+    options: {
+        download: {
             hl: 'en',
             gl: 'US',
             includesPlayerAPIResponse: false,
@@ -168,6 +152,10 @@ Platform.load({
             disableDefaultClients: false,
             disableFileCache: false,
             parsesHLSFormat: true,
+        },
+        other: {
+            logDisplay: ['info', 'success', 'warning', 'error'],
+            noUpdate: false,
         },
     },
     requestRelated: {
@@ -184,40 +172,6 @@ Platform.load({
 });
 
 import { YtdlCore } from '@/YtdlCore';
-
-YtdlCore.writeStreamToFile = async function (readableStream: ReadableStream, filePath: string) {
-    return new Promise((resolve, reject) => {
-        const WRITE_STREAM = fs.createWriteStream(filePath);
-
-        async function pump() {
-            const READER = readableStream.getReader();
-            try {
-                while (true) {
-                    const { done, value } = await READER.read();
-
-                    if (done) {
-                        WRITE_STREAM.end();
-                        break;
-                    }
-
-                    if (!WRITE_STREAM.write(Buffer.from(value))) {
-                        await new Promise((resolve) => WRITE_STREAM.once('drain', resolve));
-                    }
-                }
-            } catch (err: any) {
-                WRITE_STREAM.destroy(err);
-                reject(err);
-            } finally {
-                READER.releaseLock();
-            }
-        }
-
-        pump();
-
-        WRITE_STREAM.on('finish', resolve);
-        WRITE_STREAM.on('error', reject);
-    });
-};
 
 export * from '@/types/index';
 export { YtdlCore };

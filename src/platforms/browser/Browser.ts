@@ -1,48 +1,67 @@
 import { Platform } from '@/platforms/Platform';
-import { CacheWithMap, YtdlCore_Cache } from '@/platforms/utils/Classes';
+import { YtdlCore_Cache } from '@/platforms/utils/Classes';
 import { VERSION, REPO_URL, ISSUES_URL } from '@/utils/Constants';
 
 class CacheWithCacheStorage implements YtdlCore_Cache {
+    isDisabled: boolean = false;
+
+    constructor(private ttl: number = 60) {}
+
     private async getCache(): Promise<Cache> {
         return await caches.open('ytdlCoreCache');
     }
 
     async get<T = unknown>(key: string): Promise<T | null> {
-        const cache = await this.getCache();
-        const response = await cache.match(key);
-
-        if (response) {
-            const contentType = response.headers.get('Content-Type');
-
-            if (contentType === 'application/json') {
-                return (await response.json()) as T;
-            } else {
-                return (await response.text()) as T;
-            }
+        if (this.isDisabled) {
+            return null;
         }
+
+        const CACHE = await this.getCache(),
+            RESPONSE = await CACHE.match(key);
+
+        if (RESPONSE) {
+            try {
+                const DATA = await RESPONSE.json();
+
+                if (Date.now() > DATA.expiration) {
+                    return null;
+                }
+
+                return DATA.contents as T;
+            } catch {}
+        }
+
         return null;
     }
 
-    async set(key: string, value: any): Promise<boolean> {
-        const CACHE = await this.getCache();
-        let response: Response;
-
-        if (typeof value === 'object') {
-            response = new Response(JSON.stringify(value), {
-                headers: { 'Content-Type': 'application/json' },
-            });
-        } else {
-            response = new Response(String(value), {
-                headers: { 'Content-Type': 'text/plain' },
-            });
+    async set(key: string, value: any, { ttl }: { ttl: number } = { ttl: this.ttl }): Promise<boolean> {
+        if (this.isDisabled) {
+            return true;
         }
 
-        await CACHE.put(key, response);
+        const CACHE = await this.getCache(),
+            DATA = JSON.stringify({
+                contents: value,
+                expiration: Date.now() + ttl * 1000,
+            }),
+            RESPONSE: Response = new Response(DATA, {
+                headers: { 'Content-Type': 'application/json' },
+            });
 
-        return true;
+        try {
+            await CACHE.put(key, RESPONSE);
+
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     async has(key: string): Promise<boolean> {
+        if (this.isDisabled) {
+            return false;
+        }
+
         const CACHE = await this.getCache(),
             RESPONSE = await CACHE.match(key);
 
@@ -50,12 +69,22 @@ class CacheWithCacheStorage implements YtdlCore_Cache {
     }
 
     async delete(key: string): Promise<boolean> {
+        if (this.isDisabled) {
+            return true;
+        }
+
         const CACHE = await this.getCache();
 
-        return await CACHE.delete(key);
+        try {
+            return await CACHE.delete(key);
+        } catch {
+            return false;
+        }
     }
 
-    disable(): void {}
+    disable(): void {
+        this.isDisabled = true;
+    }
 
     initialization(): void {}
 }
@@ -65,7 +94,7 @@ Platform.load({
     server: false,
     cache: new CacheWithCacheStorage(),
     fileCache: new CacheWithCacheStorage(),
-    fetcher: fetch,
+    fetcher: (url, options) => fetch(url, options),
     poToken: () => {
         return new Promise((resolve) => {
             resolve({
@@ -74,8 +103,8 @@ Platform.load({
             });
         });
     },
-    default: {
-        options: {
+    options: {
+        download: {
             hl: 'en',
             gl: 'US',
             includesPlayerAPIResponse: false,
@@ -86,6 +115,10 @@ Platform.load({
             disableDefaultClients: false,
             disableFileCache: false,
             parsesHLSFormat: true,
+        },
+        other: {
+            logDisplay: ['info', 'success', 'warning', 'error'],
+            noUpdate: false,
         },
     },
     requestRelated: {

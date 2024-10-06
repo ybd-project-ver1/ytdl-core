@@ -1,0 +1,10 @@
+node_modules
+src/core/CacheFiles
+package
+bundle
+package-lock.json
+publish.txt
+/reference/*
+!/reference/*.bat
+/test/*
+!/test/main.test.ts

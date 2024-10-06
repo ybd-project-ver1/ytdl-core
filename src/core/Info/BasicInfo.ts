@@ -61,7 +61,7 @@ const AGE_RESTRICTED_URLS = ['support.google.com/youtube/?p=age_restrictions', '
         _metadata: {
             isMinimumMode: false,
             clients: [],
-            html5Player: '',
+            html5PlayerUrl: '',
             id: '',
             options: {},
         },
@@ -116,7 +116,7 @@ async function _getBasicInfo(id: string, options: InternalDownloadOptions, isFro
     options.clients = setupClients(options.clients || BASE_CLIENTS, options.disableDefaultClients ?? false);
 
     const HTML5_PLAYER_RESPONSE = await HTML5_PLAYER_PROMISE,
-        HTML5_PLAYER_URL = HTML5_PLAYER_RESPONSE.playerUrl;
+        HTML5_PLAYER_URL = HTML5_PLAYER_RESPONSE.url;
 
     if (!HTML5_PLAYER_URL) {
         throw new Error(`HTML5Player was not found, please report it via Issues (${SHIM.info.issuesUrl}).`);
@@ -141,7 +141,7 @@ async function _getBasicInfo(id: string, options: InternalDownloadOptions, isFro
         PLAYER_RESPONSE_LIST = Object.values(PLAYER_RESPONSES) || [];
 
     VIDEO_INFO._metadata.isMinimumMode = isMinimalMode;
-    VIDEO_INFO._metadata.html5Player = HTML5_PLAYER_URL;
+    VIDEO_INFO._metadata.html5PlayerUrl = HTML5_PLAYER_URL;
     VIDEO_INFO._metadata.clients = options.clients;
     VIDEO_INFO._metadata.options = options;
     VIDEO_INFO._metadata.id = id;
@@ -155,13 +155,13 @@ async function _getBasicInfo(id: string, options: InternalDownloadOptions, isFro
     }
 
     /** Filter out null values */
-    function getValueWithSpecifiedKey<T = unknown>(array: Array<any>, name: string): T {
-        return array.filter((v) => v && v[name])[0] as T;
+    function getValue<T = unknown>(array: Array<any>, name: string, value?: string): T {
+        return array.filter((v) => v && v[name] && (value ? v[name] === value : true))[0] as T;
     }
 
-    const INCLUDE_STORYBOARDS = getValueWithSpecifiedKey<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'storyboards'),
-        VIDEO_DETAILS = (getValueWithSpecifiedKey<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'videoDetails').videoDetails as YT_VideoDetails) || {},
-        MICROFORMAT = getValueWithSpecifiedKey<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'microformat').microformat || null,
+    const INCLUDE_STORYBOARDS = getValue<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'storyboards'),
+        VIDEO_DETAILS = (getValue<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'videoDetails').videoDetails as YT_VideoDetails) || {},
+        MICROFORMAT = getValue<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'microformat').microformat || null,
         LIVE_BROADCAST_DETAILS = PLAYER_RESPONSES.web?.microformat?.playerMicroformatRenderer.liveBroadcastDetails || null;
 
     /* Data Processing */
@@ -184,10 +184,10 @@ async function _getBasicInfo(id: string, options: InternalDownloadOptions, isFro
         }, []);
 
     VIDEO_INFO.videoDetails = InfoExtras.cleanVideoDetails(Object.assign(VIDEO_INFO.videoDetails, VIDEO_DETAILS, ADDITIONAL_DATA), MICROFORMAT?.playerMicroformatRenderer || null, options.hl);
-    VIDEO_INFO.videoDetails.playabilityStatus = getValueWithSpecifiedKey<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'playabilityStatus')?.playabilityStatus.status || 'UNKNOWN';
+    VIDEO_INFO.videoDetails.playabilityStatus = getValue<YT_PlayerApiResponse>(PLAYER_RESPONSE_LIST, 'playabilityStatus', 'OK')?.playabilityStatus.status || PLAYER_RESPONSE_LIST[0]?.playabilityStatus.status || 'UNKNOWN';
     VIDEO_INFO.videoDetails.liveBroadcastDetails = LIVE_BROADCAST_DETAILS;
 
-    VIDEO_INFO.relatedVideos = options.includesRelatedVideo ? InfoExtras.getRelatedVideos(NEXT_RESPONSES.web, options.hl || 'en') : [];
+    VIDEO_INFO.relatedVideos = options.includesRelatedVideo ? InfoExtras.getRelatedVideos(NEXT_RESPONSES.web) : [];
     VIDEO_INFO.formats = isFromGetInfo ? (FORMATS as any) : [];
 
     return VIDEO_INFO;

@@ -10,48 +10,59 @@ export abstract class YtdlCore_Cache {
 }
 
 export class CacheWithMap implements YtdlCore_Cache {
-    private cache: Map<string, any>;
-    private timeouts: Map<string, NodeJS.Timeout>;
+    private cache: Map<string, { contents: any; expiration: number }>;
+    isDisabled: boolean = false;
 
     constructor(private ttl: number = 60) {
         this.cache = new Map();
-        this.timeouts = new Map();
     }
 
     async get<T = unknown>(key: string): Promise<T | null> {
-        return this.cache.get(key) || null;
+        if (this.isDisabled) {
+            return null;
+        }
+
+        const { contents, expiration } = this.cache.get(key) || { contents: null, expiration: 0 };
+
+        if (Date.now() > expiration || !contents) {
+            return null;
+        }
+
+        return contents;
     }
 
     async set(key: string, value: any, { ttl }: { ttl: number } = { ttl: this.ttl }): Promise<boolean> {
-        this.cache.set(key, value);
-
-        if (this.timeouts.has(key)) {
-            clearTimeout(this.timeouts.get(key)!);
+        if (this.isDisabled) {
+            return true;
         }
 
-        const timeout = setTimeout(() => {
-            this.delete(key);
-        }, ttl * 1000);
-
-        this.timeouts.set(key, timeout);
+        this.cache.set(key, {
+            contents: value,
+            expiration: Date.now() + ttl * 1000,
+        });
 
         return true;
     }
 
     async has(key: string): Promise<boolean> {
+        if (this.isDisabled) {
+            return false;
+        }
+
         return this.cache.has(key);
     }
 
     async delete(key: string): Promise<boolean> {
-        if (this.timeouts.has(key)) {
-            clearTimeout(this.timeouts.get(key)!);
-            this.timeouts.delete(key);
+        if (this.isDisabled) {
+            return true;
         }
 
         return this.cache.delete(key);
     }
 
-    disable(): void {}
+    disable(): void {
+        this.isDisabled = true;
+    }
 
     initialization() {}
 }

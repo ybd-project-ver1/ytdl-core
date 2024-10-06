@@ -94,6 +94,9 @@ export type YTDL_GetInfoOptions = YTDL_ProxyOptions & {
     /** You can disable the default client. (If clients is not specified, it will be included.) */
     disableDefaultClients?: boolean;
 
+    /** You can specify whether or not to disable the normal cache.  */
+    disableBasicCache?: boolean;
+
     /** You can specify whether to disable the file cache. Disable this if you encounter errors.  */
     disableFileCache?: boolean;
 
@@ -116,6 +119,12 @@ export interface YTDL_DownloadOptions extends YTDL_GetInfoOptions, YTDL_ChooseFo
     highWaterMark?: number;
     IPv6Block?: string;
     dlChunkSize?: number;
+
+    /** You can specify the type of stream you want to get.
+     * @details If you want to write to a file using `fs.createWriteStream`, e.g. Node.js, specify `nodejs`. If you want to get something else (ReadableStream), specify `default`.
+     * @default 'default'
+     */
+    streamType?: 'default' | 'nodejs';
 }
 
 export type YTDL_RequestOptions = { requestOptions?: RequestInit; rewriteRequest?: YTDL_GetInfoOptions['rewriteRequest']; originalProxy?: YTDL_GetInfoOptions['originalProxy'] };
