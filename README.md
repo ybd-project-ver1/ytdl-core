@@ -38,7 +38,10 @@ YBD Project fork of `ytdl-core`. This fork is dedicated to developing a YouTube 
 
 ## ℹ️Announcements at this timeℹ️
 
-There are no announcements at this time.
+> [!CAUTION]
+> Currently, the account that manages this ytdl-core repository has been flagged as spam, so we are accepting issues, etc. at [ybd-project-ver1/ytdl-core](https://github.com/ybd-project-ver1/ytdl-core) instead. Thank you for your cooperation.
+
+<!-- There are no announcements at this time. -->
 
 <!-- > [!NOTE]
 > As of v5.0.5, related videos cannot be retrieved. This will be fixed later.
@@ -64,7 +67,8 @@ To use `@ybd-project/ytdl-core` without problems, **use Node.js 16 or higher.** 
 
 ## Operating Environment
 
-> [!IMPORTANT] > `@ybd-project/ytdl-core` has not been tested in non-Node.js environments such as Deno. If you need ytdl-core optimized for these environments, please create an [issue](https://github.com/ybd-project-ver1/ytdl-core/issues/new?assignees=&labels=feature&projects=&template=feature_request.md&title=).
+> [!IMPORTANT]
+> `@ybd-project/ytdl-core` has not been tested in non-Node.js environments such as Deno. If you need ytdl-core optimized for these environments, please create an [issue](https://github.com/ybd-project-ver1/ytdl-core/issues/new?assignees=&labels=feature&projects=&template=feature_request.md&title=).
 
 ### Default (Node.js)
 
@@ -154,7 +158,8 @@ ytdl.getBasicInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ').then((info) => 
 
 These can be used to avoid age restrictions and bot errors. See below for instructions on how to use them.
 
-> [!IMPORTANT] > **Be sure to generate tokens with accounts that can be banned, as accounts may be banned.**
+> [!IMPORTANT]
+> **Be sure to generate tokens with accounts that can be banned, as accounts may be banned.**
 > Note that OAuth2 may expire soon these days. In this case, do not use OAuth2.
 
 > [!NOTE]

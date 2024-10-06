@@ -17,12 +17,13 @@ export default class Base {
             return null;
         }
 
+        const STATUS = playerResponse.playabilityStatus.reason || null;
         if (PLAYABILITY.status === 'ERROR' || PLAYABILITY.status === 'LOGIN_REQUIRED') {
-            return new UnrecoverableError(PLAYABILITY.reason || (PLAYABILITY.messages && PLAYABILITY.messages[0]));
+            return new UnrecoverableError(PLAYABILITY.reason || (PLAYABILITY.messages && PLAYABILITY.messages[0]) || 'Unknown error.', STATUS);
         } else if (PLAYABILITY.status === 'LIVE_STREAM_OFFLINE') {
-            return new UnrecoverableError(PLAYABILITY.reason || 'The live stream is offline.');
+            return new UnrecoverableError(PLAYABILITY.reason || 'The live stream is offline.', STATUS);
         } else if (PLAYABILITY.status === 'UNPLAYABLE') {
-            return new UnrecoverableError(PLAYABILITY.reason || 'This video is unavailable.');
+            return new UnrecoverableError(PLAYABILITY.reason || 'This video is unavailable.', STATUS);
         }
 
         return null;
