@@ -18,7 +18,7 @@ jobs:
                   node-version: '20'
 
             - name: Install dependencies
-              run: npm clean-install
+              run: npm install
 
             - name: Run getPlayerData script
               run: node scripts/getPlayerData.mjs --only-player-json
