@@ -1,15 +1,23 @@
-type Html5PlayerInfo = { playerUrl: string | null; signatureTimestamp: string; playerBody: string | null };
+type Html5PlayerInfo = { url: string; body: string | null; id: string; signatureTimestamp: string };
 
 import type { YTDL_GetInfoOptions } from '@/types/Options';
+
 import { Platform } from '@/platforms/Platform';
+
 import { Signature } from '@/core/Signature';
 import { Fetcher } from '@/core/Fetcher';
+
 import { Url } from '@/utils/Url';
-import { Logger } from '@/utils/Log';
+import { CURRENT_PLAYER_ID } from '@/utils/Constants';
 
-const FileCache = Platform.getShim().fileCache;
+const SHIM = Platform.getShim(),
+    FileCache = SHIM.fileCache;
 
-function getPlayerId(body: string): string | null {
+function getPlayerId(body?: string): string | null {
+    if (!body) {
+        return null;
+    }
+
     const MATCH = body.match(/player\\\/([a-zA-Z0-9]+)\\\//);
 
     if (MATCH) {
@@ -22,37 +30,42 @@ function getPlayerId(body: string): string | null {
 async function getHtml5Player(options: YTDL_GetInfoOptions): Promise<Html5PlayerInfo> {
     const CACHE = await FileCache.get<Html5PlayerInfo>('html5Player');
 
-    if (CACHE && CACHE.playerUrl) {
+    if (CACHE && CACHE.url) {
         return {
-            playerUrl: CACHE.playerUrl,
+            url: CACHE.url,
+            body: CACHE.body,
+            id: CACHE.id,
             signatureTimestamp: CACHE.signatureTimestamp,
-            playerBody: CACHE.playerBody,
         };
     }
 
-    const IFRAME_API_BODY = await Fetcher.request<string>(Url.getIframeApiUrl(), options),
-        PLAYER_ID = getPlayerId(IFRAME_API_BODY);
+    let playerId = undefined,
+        signatureTimestamp = undefined;
 
-    let playerUrl = PLAYER_ID ? Url.getPlayerJsUrl(PLAYER_ID) : null;
+    try {
+        const IFRAME_API_BODY = await Fetcher.request<string>(Url.getIframeApiUrl(), options);
+        playerId = getPlayerId(IFRAME_API_BODY);
+    } catch {}
 
-    if (!playerUrl && options.originalProxy) {
-        Logger.debug('Could not get html5Player using your own proxy. It is retrieved again with its own proxy disabled. (Other requests will not invalidate it.)');
-
-        const BODY = await Fetcher.request<string>(Url.getIframeApiUrl(), {
-                ...options,
-                rewriteRequest: undefined,
-                originalProxy: undefined,
-            }),
-            PLAYER_ID = getPlayerId(BODY);
-
-        playerUrl = PLAYER_ID ? Url.getPlayerJsUrl(PLAYER_ID) : null;
+    if (!playerId) {
+        try {
+            const GITHUB_PLAYER_JSON = await Fetcher.request<{ playerId: string; signatureTimestamp: string }>('https://api.github.com/repos/ybd-project/ytdl-core/dev/contents/data/player/data.json?ref=dev');
+            playerId = GITHUB_PLAYER_JSON.playerId;
+            signatureTimestamp = GITHUB_PLAYER_JSON.signatureTimestamp;
+        } catch {}
     }
 
-    const HTML5_PLAYER_BODY = playerUrl ? await Fetcher.request<string>(playerUrl, options) : '',
+    if (!playerId) {
+        playerId = CURRENT_PLAYER_ID;
+    }
+
+    const PLAYER_URL = Url.getPlayerJsUrl(playerId),
+        HTML5_PLAYER_BODY = (PLAYER_URL ? await Fetcher.request<string>(PLAYER_URL, options) : '') || (await Fetcher.request<string>('https://api.github.com/repos/ybd-project/ytdl-core/dev/contents/data/player/base.js?ref=dev')),
         DATA = {
-            playerUrl,
-            signatureTimestamp: playerUrl ? Signature.getSignatureTimestamp(HTML5_PLAYER_BODY) || '' : '',
-            playerBody: HTML5_PLAYER_BODY || null,
+            url: PLAYER_URL,
+            body: HTML5_PLAYER_BODY || null,
+            id: playerId,
+            signatureTimestamp: signatureTimestamp || (PLAYER_URL ? Signature.getSignatureTimestamp(HTML5_PLAYER_BODY) || '' : ''),
         };
 
     FileCache.set('html5Player', JSON.stringify(DATA));

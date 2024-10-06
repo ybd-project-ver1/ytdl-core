@@ -249,6 +249,9 @@ class FormatUtils {
                 case 'TVHTML5_SIMPLY_EMBEDDED_PLAYER': {
                     return 'tvEmbedded';
                 }
+                case 'TVHTML5': {
+                    return 'tv';
+                }
                 default: {
                     return 'unknown';
                 }

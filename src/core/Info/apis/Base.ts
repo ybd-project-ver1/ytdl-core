@@ -14,7 +14,7 @@ export default class ApiBase {
                 return Object.assign({}, res.value) as YTDL_InnertubeResponseInfo<T>;
             } else {
                 const REASON = (res.reason as YTDL_InnertubeResponseInfo<T>) || {};
-                Logger.debug(`[ ${client} ]: <error>Error</error>\nReason: ${REASON.error?.message || REASON.error?.toString()}`);
+                Logger.debug(`[ ${client} ]: <error>Error</error>\nReason: <error>${REASON.error?.message || REASON.error?.toString()}</error>`);
 
                 return REASON;
             }

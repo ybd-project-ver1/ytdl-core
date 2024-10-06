@@ -2,14 +2,15 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-import { AvailableCacheFileNames, FileCacheOptions } from '@/platforms/types/FileCache';
+import type { AvailableCacheFileNames, FileCacheOptions } from '@/platforms/types/FileCache';
 
 import { Platform } from '@/platforms/Platform';
 import { CacheWithMap, YtdlCore_Cache } from '@/platforms/utils/Classes';
+
 import { VERSION, REPO_URL, ISSUES_URL } from '@/utils/Constants';
+import { Logger } from '@/utils/Log';
 
 class FileCache implements YtdlCore_Cache {
-    private timeouts: Map<string, NodeJS.Timeout> = new Map();
     isDisabled: boolean = false;
     cacheDir: string = path.resolve(os.tmpdir(), './.YtdlCore-Cache/');
 
@@ -26,7 +27,7 @@ class FileCache implements YtdlCore_Cache {
             const FILE_PATH = path.resolve(this.cacheDir, cacheName + '.txt'),
                 PARSED_DATA = JSON.parse(fs.readFileSync(FILE_PATH, 'utf8'));
 
-            if (Date.now() > PARSED_DATA.date) {
+            if (Date.now() > PARSED_DATA.expiration) {
                 return null;
             }
 
@@ -52,20 +53,10 @@ class FileCache implements YtdlCore_Cache {
             fs.writeFileSync(
                 path.resolve(this.cacheDir, cacheName + '.txt'),
                 JSON.stringify({
-                    date: Date.now() + options.ttl * 1000,
+                    expiration: Date.now() + options.ttl * 1000,
                     contents: data,
                 }),
             );
-
-            if (this.timeouts.has(cacheName)) {
-                clearTimeout(this.timeouts.get(cacheName)!);
-            }
-
-            const TIMEOUT = setTimeout(() => {
-                this.delete(cacheName);
-            }, options.ttl * 1000);
-
-            this.timeouts.set(cacheName, TIMEOUT);
 
             Logger.debug(`[ FileCache ]: <success>"${cacheName}"</success> is cached.`);
             return true;
@@ -103,11 +94,6 @@ class FileCache implements YtdlCore_Cache {
             fs.unlinkSync(FILE_PATH);
             Logger.debug(`[ FileCache ]: Cache key <blue>"${cacheName}"</blue> was deleted.`);
 
-            if (this.timeouts.has(cacheName)) {
-                clearTimeout(this.timeouts.get(cacheName)!);
-                this.timeouts.delete(cacheName);
-            }
-
             return true;
         } catch (err) {
             return false;
@@ -140,7 +126,7 @@ Platform.load({
     server: true,
     cache: new CacheWithMap(),
     fileCache: new FileCache(),
-    fetcher: fetch,
+    fetcher: (url, options) => fetch(url, options),
     poToken: () => {
         return new Promise((resolve) => {
             resolve({
@@ -149,8 +135,8 @@ Platform.load({
             });
         });
     },
-    default: {
-        options: {
+    options: {
+        download: {
             hl: 'en',
             gl: 'US',
             includesPlayerAPIResponse: false,
@@ -161,6 +147,10 @@ Platform.load({
             disableDefaultClients: false,
             disableFileCache: false,
             parsesHLSFormat: true,
+        },
+        other: {
+            logDisplay: ['info', 'success', 'warning', 'error'],
+            noUpdate: false,
         },
     },
     requestRelated: {
@@ -177,7 +167,6 @@ Platform.load({
 });
 
 import { YtdlCore } from '@/YtdlCore';
-import { Logger } from '@/utils/Log';
 
 export * from '@/types/index';
 export { YtdlCore };

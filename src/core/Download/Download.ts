@@ -1,4 +1,8 @@
-import type { YTDL_ClientTypes, YTDL_VideoFormat, YTDL_VideoInfo } from '@/types';
+type InternalDownloadOptionsBase = Omit<InternalDownloadOptions, 'streamType'>;
+
+import { Readable } from 'readable-stream';
+
+import type { YTDL_ClientTypes, YTDL_DefaultStreamType, YTDL_NodejsStreamType, YTDL_VideoFormat, YTDL_VideoInfo } from '@/types';
 import { InternalDownloadOptions } from '@/core/types';
 
 import { getFullInfo } from '@/core/Info';
@@ -30,7 +34,7 @@ async function isDownloadUrlValid(format: YTDL_VideoFormat): Promise<{ valid: bo
                 }
             },
             errorResponseHandler = (reason: Error) => {
-                Logger.debug(`[ ${format.sourceClientName} ]: The URL for the video <error>did not return a successful response</error>. Got another format.\nReason: ${reason.message}`);
+                Logger.debug(`[ ${format.sourceClientName} ]: The URL for the video <error>did not return a successful response</error>. Got another format.\nReason: <error>${reason.message}</error>`);
                 resolve({ valid: false, reason: reason.message });
             };
 
@@ -114,7 +118,9 @@ export async function* streamToIterable(stream: ReadableStream<Uint8Array>) {
     }
 }
 
-async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalDownloadOptions): Promise<ReadableStream<Uint8Array>> {
+async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalDownloadOptions & { streamType: 'default' }): Promise<ReadableStream>;
+async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalDownloadOptions & { streamType: 'nodejs' }): Promise<Readable>;
+async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalDownloadOptions): Promise<YTDL_DefaultStreamType | YTDL_NodejsStreamType> {
     if (!info.formats.length) {
         throw new Error('This video is not available due to lack of video format.');
     }
@@ -171,10 +177,14 @@ async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalD
             throw new Error('Failed to retrieve response body.');
         }
 
-        return BODY;
+        if (options.streamType === 'nodejs') {
+            return Readable.from(streamToIterable(BODY));
+        } else {
+            return BODY;
+        }
     }
 
-    const READABLE_STREAM = new ReadableStream<Uint8Array>(
+    const READABLE_STREAM = new ReadableStream(
         {
             start() {},
             pull: async (controller) => {
@@ -250,22 +260,34 @@ async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalD
         },
     );
 
-    return READABLE_STREAM;
+    if (options.streamType === 'nodejs') {
+        return Readable.from(streamToIterable(READABLE_STREAM));
+    } else {
+        return READABLE_STREAM;
+    }
 }
 
-async function downloadFromInfo(info: YTDL_VideoInfo, options: InternalDownloadOptions): Promise<ReadableStream<Uint8Array>> {
+async function downloadFromInfo(info: YTDL_VideoInfo, options: InternalDownloadOptions): Promise<YTDL_DefaultStreamType | YTDL_NodejsStreamType> {
     if (!info.full) {
         throw new Error('Cannot use `ytdl.downloadFromInfo()` when called with info from `ytdl.getBasicInfo()`');
     }
 
-    return await downloadFromInfoCallback(info, options);
+    if (options.streamType === 'nodejs') {
+        return await downloadFromInfoCallback(info, { ...options, streamType: 'nodejs' });
+    } else {
+        return await downloadFromInfoCallback(info, { ...options, streamType: 'default' });
+    }
 }
 
-function download(link: string, options: InternalDownloadOptions): Promise<ReadableStream<Uint8Array>> {
-    return new Promise<ReadableStream<Uint8Array>>((resolve) => {
+function download(link: string, options: InternalDownloadOptions): Promise<YTDL_DefaultStreamType | YTDL_NodejsStreamType> {
+    return new Promise<YTDL_DefaultStreamType | YTDL_NodejsStreamType>((resolve) => {
         getFullInfo(link, options)
             .then((info) => {
-                resolve(downloadFromInfoCallback(info, options));
+                if (options.streamType === 'nodejs') {
+                    resolve(downloadFromInfoCallback(info, { ...options, streamType: 'nodejs' }));
+                } else {
+                    resolve(downloadFromInfoCallback(info, { ...options, streamType: 'default' }));
+                }
             })
             .catch((err) => {
                 throw err;

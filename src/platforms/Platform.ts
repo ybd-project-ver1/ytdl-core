@@ -1,4 +1,9 @@
 import { YTDL_DownloadOptions } from '@/types';
+
+import { PlatformError } from '@/core/errors';
+
+import { Logger } from '@/utils/Log';
+
 import { YtdlCore_Cache } from './utils/Classes';
 
 interface YtdlCore_Shim {
@@ -8,8 +13,12 @@ interface YtdlCore_Shim {
     fileCache: YtdlCore_Cache;
     fetcher: (url: URL | RequestInfo, options?: RequestInit) => Promise<Response>;
     poToken: () => Promise<{ poToken: string; visitorData: string }>;
-    default: {
-        options: YTDL_DownloadOptions;
+    options: {
+        download: YTDL_DownloadOptions;
+        other: {
+            logDisplay: Array<'debug' | 'info' | 'success' | 'warning' | 'error'>;
+            noUpdate: boolean;
+        };
     };
     requestRelated: {
         rewriteRequest: YTDL_DownloadOptions['rewriteRequest'];
@@ -29,11 +38,12 @@ export class Platform {
         shim.fileCache.initialization();
 
         this.#shim = shim;
+        Logger.initialization();
     }
 
     static getShim() {
         if (!this.#shim) {
-            throw new Error('Platform is not loaded');
+            throw new PlatformError('Platform is not loaded');
         }
 
         return this.#shim;

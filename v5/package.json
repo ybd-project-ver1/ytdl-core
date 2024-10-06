@@ -1,0 +1,68 @@
+{
+    "name": "@ybd-project/ytdl-core",
+    "version": "5.1.9-2",
+    "description": "YBD Project fork of ytdl-core.",
+    "author": "YBD Project",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/ybd-project/ytdl-core.git"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "engines": {
+        "node": ">=18.0"
+    },
+    "main": "./package/YtdlCore.js",
+    "types": "./package/YtdlCore.d.ts",
+    "exports": {
+        ".": {
+            "types": "./package/YtdlCore.d.ts",
+            "default": "./package/YtdlCore.js"
+        },
+        "./old": {
+            "types": "./package/YtdlCore.old.d.ts",
+            "default": "./package/YtdlCore.old.js"
+        }
+    },
+    "files": [
+        "package"
+    ],
+    "scripts": {
+        "test": "npx jest ./test/main.test.ts",
+        "build": "rmdir /s /q package && tsc && tsc-alias && npm run clear-cache-files",
+        "clear-cache-files": "cd package/core && rmdir /s /q CacheFiles 2>nul & cd ../..",
+        "update": "ncu && ncu -u && npm i",
+        "publish:github": "npm run build && npm publish --registry=https://npm.pkg.github.com",
+        "publish:npm": "npm run build && npm publish --registry=https://registry.npmjs.org/"
+    },
+    "dependencies": {
+        "chrono-node": "^2.7.6",
+        "http-cookie-agent": "^6.0.5",
+        "m3u8stream": "^0.8.6",
+        "miniget": "^4.2.3",
+        "sax": "^1.4.1",
+        "tough-cookie": "^4.1.4",
+        "undici": "^5.28.2",
+        "youtube-po-token-generator": "^0.2.0"
+    },
+    "devDependencies": {
+        "@types/jest": "^29.5.12",
+        "@types/node": "^22.5.4",
+        "@types/sax": "^1.2.7",
+        "eslint": "^9.10.0",
+        "jest": "^29.7.0",
+        "npm-check-updates": "^17.1.1",
+        "ts-jest": "^29.2.5",
+        "tsc-alias": "^1.8.10",
+        "typescript": "^5.5.4"
+    },
+    "keywords": [
+        "youtube",
+        "video",
+        "download",
+        "ybd-project",
+        "ytdl"
+    ],
+    "license": "MIT"
+}

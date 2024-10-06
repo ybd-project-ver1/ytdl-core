@@ -1,9 +1,13 @@
 import type { YT_PlayerApiResponse, YTDL_InnertubeResponseInfo, YTDL_RequestOptions } from '@/types';
 
+import { Platform } from '@/platforms/Platform';
+
 import { PlayerRequestError, UnrecoverableError } from '@/core/errors';
 import { Fetcher } from '@/core/Fetcher';
 
 import type { YTDL_ClientsParams } from '@/utils/Clients';
+
+const SHIM = Platform.getShim();
 
 export default class Base {
     private static playError(playerResponse: YT_PlayerApiResponse | null): Error | null {
@@ -41,24 +45,11 @@ export default class Base {
                     originalProxy: params.options.originalProxy,
                 },
                 IS_NEXT_API = url.includes('/next'),
+                ALLOW_RETRY_REQUEST = OPTS.originalProxy && SHIM.runtime !== 'browser',
                 responseHandler = (response: YT_PlayerApiResponse) => {
                     const PLAY_ERROR = this.playError(response);
 
                     if (PLAY_ERROR) {
-                        if (OPTS.originalProxy) {
-                            OPTS.originalProxy = undefined;
-                            Fetcher.request<YT_PlayerApiResponse>(url, OPTS)
-                                .then(responseHandler)
-                                .catch((err) => {
-                                    reject({
-                                        isError: true,
-                                        error: err,
-                                        contents: null,
-                                    });
-                                });
-
-                            return;
-                        }
                         return reject({
                             isError: true,
                             error: PLAY_ERROR,
@@ -82,23 +73,28 @@ export default class Base {
                         error: null,
                         contents: response as T,
                     });
+                },
+                retryRequest = () => {
+                    OPTS.originalProxy = undefined;
+                    Fetcher.request<YT_PlayerApiResponse>(url, OPTS)
+                        .then(responseHandler)
+                        .catch((err) => {
+                            reject({
+                                isError: true,
+                                error: err,
+                                contents: null,
+                            });
+                        });
+
+                    return;
                 };
 
             try {
                 Fetcher.request<YT_PlayerApiResponse>(url, OPTS)
                     .then(responseHandler)
                     .catch((err) => {
-                        if (OPTS.originalProxy) {
-                            OPTS.originalProxy = undefined;
-                            Fetcher.request<YT_PlayerApiResponse>(url, OPTS)
-                                .then(responseHandler)
-                                .catch((err) => {
-                                    reject({
-                                        isError: true,
-                                        error: err,
-                                        contents: null,
-                                    });
-                                });
+                        if (ALLOW_RETRY_REQUEST) {
+                            return retryRequest();
                         }
 
                         reject({

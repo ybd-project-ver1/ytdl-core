@@ -43,7 +43,9 @@ const N_TRANSFORM_REGEXP = 'function\\(\\s*(\\w+)\\s*\\)\\s*\\{' + 'var\\s*(\\w+
 /* ----------- */
 
 const SIGNATURE_TIMESTAMP_REGEX = /signatureTimestamp:(\d+)/g,
-    SHIM = Platform.getShim();
+    SHIM = Platform.getShim(),
+    FILE_CACHE = SHIM.fileCache,
+    Jinter = require('jintr').default;
 
 let decipherWarning = false,
     nTransformWarning = false;
@@ -152,44 +154,45 @@ function extractNTransformWithName(body: string): string | null {
     }
 }
 
-/* Eval */
+/* Eval, Reference: LuanRT/YouTube.js - jintr.ts */
 function runInNewContext(code: string, contextObject = {}) {
-    // コンテキストオブジェクトのプロパティをローカル変数として定義
-    const CONTEXT_VARIABLE = Object.keys(contextObject)
-            .map((key) => `let ${key} = contextObject.${key};`)
-            .join('\n'),
-        RESULTS_VARIABLE = '__result__',
-        FULL_CODE = `
-            ${CONTEXT_VARIABLE}
-            ${RESULTS_VARIABLE} = (function() {${code}})();
-        `;
+    const RUNTIME = new Jinter();
 
-    eval(FULL_CODE);
-    return eval(RESULTS_VARIABLE);
+    for (const [KEY, VALUE] of Object.entries(contextObject)) {
+        RUNTIME.scope.set(KEY, VALUE);
+    }
+
+    return RUNTIME.evaluate(code);
 }
 
 /* Decipher */
-function getDownloadURL(format: YT_StreamingAdaptiveFormat, decipherFunction: string | null, nTransformFunction: string | null) {
+function setDownloadURL(format: YT_StreamingAdaptiveFormat, decipherFunction: string | null, nTransformFunction: string | null) {
     if (!decipherFunction) {
         return;
     }
 
     const decipher = (url: string): string => {
-            const SEARCH_PARAMS = new URLSearchParams(url),
-                PARAMS_URL = SEARCH_PARAMS.get('url')?.toString() || '';
+            const SEARCH_PARAMS = new URLSearchParams('?' + url),
+                PARAMS_URL = SEARCH_PARAMS.get('url')?.toString() || '',
+                PARAMS_S = SEARCH_PARAMS.get('s');
 
-            if (!SEARCH_PARAMS.get('s')) {
+            if (!PARAMS_S) {
                 return PARAMS_URL;
             }
 
-            const COMPONENTS = new URL(decodeURIComponent(PARAMS_URL)),
-                CONTEXT: Record<string, string> = {};
+            try {
+                const COMPONENTS = new URL(decodeURIComponent(PARAMS_URL)),
+                    CONTEXT: Record<string, string> = {};
 
-            CONTEXT[DECIPHER_ARGUMENT] = decodeURIComponent(PARAMS_URL);
+                CONTEXT[DECIPHER_ARGUMENT] = decodeURIComponent(PARAMS_S);
 
-            COMPONENTS.searchParams.set(SEARCH_PARAMS.get('sp')?.toString() || 'sig', runInNewContext(decipherFunction, CONTEXT));
+                COMPONENTS.searchParams.set(SEARCH_PARAMS.get('sp')?.toString() || 'sig', runInNewContext(decipherFunction, CONTEXT));
 
-            return COMPONENTS.toString();
+                return COMPONENTS.toString();
+            } catch (err) {
+                Logger.debug(`[ Decipher ]: <error>Failed</error> to decipher URL: <error>${err}</error>`);
+                return PARAMS_URL;
+            }
         },
         nTransform = (url: string): string => {
             const COMPONENTS = new URL(decodeURIComponent(url)),
@@ -223,7 +226,11 @@ class Signature {
     public decipherFunction: string | null = null;
     public nTransformFunction: string | null = null;
 
-    public static getSignatureTimestamp(body: string): string {
+    public static getSignatureTimestamp(body?: string): string {
+        if (!body) {
+            return '0';
+        }
+
         const MATCH = body.match(SIGNATURE_TIMESTAMP_REGEX);
 
         if (MATCH) {
@@ -241,7 +248,7 @@ class Signature {
                 return;
             }
 
-            getDownloadURL(format, this.decipherFunction, this.nTransformFunction);
+            setDownloadURL(format, this.decipherFunction, this.nTransformFunction);
 
             DECIPHERED_FORMATS[format.url] = format;
         });
@@ -249,9 +256,15 @@ class Signature {
         return DECIPHERED_FORMATS;
     }
 
-    public getDecipherFunctions(playerId: string, body: string) {
-        if (this.decipherFunction) {
-            return this.decipherFunction;
+    public async getDecipherFunctions(playerId: string, body: string) {
+        const CACHED_DECIPHER_FUNCTION = this.decipherFunction || (await FILE_CACHE.get('decipherFunction'));
+
+        if (CACHED_DECIPHER_FUNCTION) {
+            if (!this.decipherFunction) {
+                this.decipherFunction = CACHED_DECIPHER_FUNCTION;
+            }
+
+            return CACHED_DECIPHER_FUNCTION;
         }
 
         const DECIPHER_FUNCTION = getExtractFunctions([extractDecipherWithName, extractDecipherFunc], body);
@@ -261,12 +274,23 @@ class Signature {
             decipherWarning = true;
         }
 
+        FILE_CACHE.set('decipherFunction', DECIPHER_FUNCTION || '', { ttl: 60 * 60 * 24 });
         this.decipherFunction = DECIPHER_FUNCTION;
 
         return DECIPHER_FUNCTION;
     }
 
-    public getNTransform(playerId: string, body: string) {
+    public async getNTransform(playerId: string, body: string) {
+        const CACHED_N_TRANSFORM_FUNCTION = this.nTransformFunction || (await FILE_CACHE.get('nTransformFunction'));
+
+        if (CACHED_N_TRANSFORM_FUNCTION) {
+            if (!this.nTransformFunction) {
+                this.nTransformFunction = CACHED_N_TRANSFORM_FUNCTION;
+            }
+
+            return CACHED_N_TRANSFORM_FUNCTION;
+        }
+
         if (this.nTransformFunction) {
             return this.nTransformFunction;
         }
@@ -278,6 +302,7 @@ class Signature {
             nTransformWarning = true;
         }
 
+        FILE_CACHE.set('nTransformFunction', N_TRANSFORM_FUNCTION || '', { ttl: 60 * 60 * 24 });
         this.nTransformFunction = N_TRANSFORM_FUNCTION;
 
         return N_TRANSFORM_FUNCTION;

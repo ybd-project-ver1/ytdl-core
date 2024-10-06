@@ -353,6 +353,7 @@ class YtdlCore {
     public rewriteRequest: YTDL_GetInfoOptions['rewriteRequest'];
     public agent: YTDL_Agent | undefined;
     public poToken: string | undefined;
+    public disablePoTokenAutoGeneration: boolean = false;
     public visitorData: string | undefined;
     public includesPlayerAPIResponse: boolean = false;
     public includesNextAPIResponse: boolean = false;
@@ -443,7 +444,7 @@ class YtdlCore {
         }
     }
 
-    constructor({ lang, requestOptions, rewriteRequest, agent, poToken, visitorData, includesPlayerAPIResponse, includesNextAPIResponse, includesOriginalFormatData, includesRelatedVideo, clients, disableDefaultClients, oauth2, parsesHLSFormat, originalProxyUrl, originalProxy, quality, filter, excludingClients, includingClients, range, begin, liveBuffer, highWaterMark, IPv6Block, dlChunkSize, debug, disableFileCache }: YTDL_Constructor = {}) {
+    constructor({ lang, requestOptions, rewriteRequest, agent, poToken, disablePoTokenAutoGeneration, visitorData, includesPlayerAPIResponse, includesNextAPIResponse, includesOriginalFormatData, includesRelatedVideo, clients, disableDefaultClients, oauth2, parsesHLSFormat, originalProxyUrl, originalProxy, quality, filter, excludingClients, includingClients, range, begin, liveBuffer, highWaterMark, IPv6Block, dlChunkSize, debug, disableFileCache }: YTDL_Constructor = {}) {
         /* Other Options */
         process.env.YTDL_DEBUG = (debug ?? false).toString();
         process.env._YTDL_DISABLE_FILE_CACHE = (disableFileCache ?? false).toString();
@@ -453,6 +454,7 @@ class YtdlCore {
         this.requestOptions = requestOptions || {};
         this.rewriteRequest = rewriteRequest || undefined;
         this.agent = agent || undefined;
+        this.disablePoTokenAutoGeneration = disablePoTokenAutoGeneration ?? false;
         this.includesPlayerAPIResponse = includesPlayerAPIResponse ?? false;
         this.includesNextAPIResponse = includesNextAPIResponse ?? false;
         this.includesOriginalFormatData = includesOriginalFormatData ?? false;
@@ -499,7 +501,9 @@ class YtdlCore {
         this.IPv6Block = IPv6Block || undefined;
         this.dlChunkSize = dlChunkSize || undefined;
 
-        this.automaticallyGeneratePoToken();
+        if (!this.disablePoTokenAutoGeneration) {
+            this.automaticallyGeneratePoToken();
+        }
         this.initializeHtml5PlayerCache();
 
         /* Version Check */
@@ -514,6 +518,7 @@ class YtdlCore {
         options.rewriteRequest = options.rewriteRequest || this.rewriteRequest;
         options.agent = options.agent || this.agent;
         options.poToken = options.poToken || this.poToken;
+        options.disablePoTokenAutoGeneration = options.disablePoTokenAutoGeneration || this.disablePoTokenAutoGeneration;
         options.visitorData = options.visitorData || this.visitorData;
         options.includesPlayerAPIResponse = options.includesPlayerAPIResponse || this.includesPlayerAPIResponse;
         options.includesNextAPIResponse = options.includesNextAPIResponse || this.includesNextAPIResponse;

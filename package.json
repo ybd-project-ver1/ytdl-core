@@ -1,76 +1,112 @@
 {
     "name": "@ybd-project/ytdl-core",
-    "version": "5.1.8",
+    "version": "6.0.0-beta.13",
     "description": "YBD Project fork of ytdl-core.",
     "author": "YBD Project",
     "repository": {
         "type": "git",
         "url": "git://github.com/ybd-project/ytdl-core.git"
     },
-    "publishConfig": {
-        "registry": "https://npm.pkg.github.com"
-    },
     "engines": {
         "node": ">=16.0"
     },
-    "main": "./package/YtdlCore.js",
-    "types": "./package/YtdlCore.d.ts",
+    "main": "./package/platforms/Default/Default.js",
+    "types": "./package/platforms/Default/Default.d.ts",
     "exports": {
         ".": {
-            "types": "./package/YtdlCore.d.ts",
-            "default": "./package/YtdlCore.js"
+            "types": "./package/platforms/Default/Default.d.ts",
+            "node": {
+                "import": "./package/platforms/Default/Default.js",
+                "require": "./bundle/node.cjs"
+            },
+            "browser": "./package/platforms/Browser/Browser.js",
+            "default": "./package/platforms/Default/Default.js"
+        },
+        "./default": {
+            "types": "./package/platforms/Default/Default.d.ts",
+            "default": "./package/platforms/Default/Default.js"
+        },
+        "./default.bundle": {
+            "types": "./package/platforms/Default/Default.d.ts",
+            "default": "./bundle/node.cjs"
         },
         "./browser": {
-            "types": "./package/YtdlCore.old.d.ts",
-            "default": "./package/YtdlCore.old.js"
+            "types": "./package/platforms/Browser/Browser.d.ts",
+            "default": "./package/platforms/Browser/Browser.js"
+        },
+        "./browser.bundle": {
+            "types": "./package/platforms/Browser/Browser.d.ts",
+            "default": "./bundle/browser.js"
         },
         "./serverless": {
-            "types": "./package/YtdlCore.old.d.ts",
-            "default": "./package/YtdlCore.old.js"
+            "types": "./package/platforms/Serverless/Serverless.d.ts",
+            "default": "./package/platforms/Serverless/Serverless.js"
+        },
+        "./serverless.bundle": {
+            "types": "./package/platforms/Serverless/Serverless.d.ts",
+            "default": "./bundle/serverless.cjs"
         },
         "./types": {
-            "types": "./package/YtdlCore.old.d.ts",
-            "default": "./package/YtdlCore.old.js"
+            "types": "./package/types/index.d.ts",
+            "default": "./package/types/index.d.ts"
         }
     },
     "files": [
-        "package"
+        "package",
+        "bundle"
     ],
     "scripts": {
-        "test": "npx jest ./test/main.test.ts",
-        "build": "rmdir /s /q package && tsc && tsc-alias && npm run clear-cache-files",
+        "test": "npx jest ./test/main.test.ts --detectOpenHandles",
         "clear-cache-files": "cd package/core && rmdir /s /q CacheFiles 2>nul & cd ../..",
+        "build": "node ./scripts/getPlayerData.mjs && rmdir /s /q package & tsc && tsc-alias && npm run clear-cache-files && npm run create-bundles",
+        "publish:npm": "node ./scripts/publish.mjs latest && npm run build && npm publish --registry=https://registry.npmjs.org/",
+        "publish:npm-alpha": "node ./scripts/publish.mjs alpha && npm run build && npm publish --registry=https://registry.npmjs.org/ --tag alpha",
+        "publish:npm-beta": "node ./scripts/publish.mjs beta && npm run build && npm publish --registry=https://registry.npmjs.org/ --tag beta",
+        "create-bundles": "npm run create-node-bundle && npm run create-browser-bundle && npm run create-serverless-bundle",
+        "create-node-bundle": "rmdir /s /q bundle & mkdir bundle && esbuild ./package/platforms/Default/Default.js --bundle --target=node16 --keep-names --format=cjs --platform=node --outfile=./bundle/node.cjs --banner:js=\"/* eslint-disable */\" --minify",
+        "create-browser-bundle": "esbuild ./package/platforms/Browser/Browser.js --banner:js=\"/* eslint-disable */\" --bundle --target=chrome70 --keep-names --format=esm --define:global=globalThis --conditions=module --outfile=./bundle/browser.js --platform=browser --minify",
+        "create-serverless-bundle": "esbuild ./package/platforms/Serverless/Serverless.js --bundle --target=node16 --keep-names --format=cjs --platform=node --outfile=./bundle/serverless.cjs --banner:js=\"/* eslint-disable */\" --minify",
         "update": "ncu && ncu -u && npm i",
-        "publish:github": "npm run build && npm publish --registry=https://npm.pkg.github.com",
-        "publish:npm": "npm run build && npm publish --registry=https://registry.npmjs.org/"
+        "deleteNodeModules:examples": "node ./scripts/deleteExamplesNodeModules.js"
     },
     "dependencies": {
-        "chrono-node": "^2.7.6",
-        "http-cookie-agent": "^6.0.5",
-        "m3u8stream": "^0.8.6",
-        "miniget": "^4.2.3",
+        "bgutils-js": "^2.2.0",
+        "jintr": "^2.1.1",
+        "jsdom": "^25.0.1",
+        "readable-stream": "^4.5.2",
         "sax": "^1.4.1",
-        "tough-cookie": "^4.1.4",
-        "undici": "^5.28.2",
-        "youtube-po-token-generator": "^0.2.0"
+        "ua-parser-js": "^1.0.39"
     },
     "devDependencies": {
-        "@types/jest": "^29.5.12",
-        "@types/node": "^22.5.4",
+        "@inquirer/prompts": "^6.0.1",
+        "@types/jest": "^29.5.13",
+        "@types/jsdom": "^21.1.7",
+        "@types/node": "^22.5.5",
+        "@types/readable-stream": "^4.0.15",
         "@types/sax": "^1.2.7",
-        "eslint": "^9.10.0",
+        "@types/ua-parser-js": "^0.7.39",
+        "esbuild": "^0.24.0",
+        "eslint": "^9.11.0",
         "jest": "^29.7.0",
-        "npm-check-updates": "^17.1.1",
+        "npm-check-updates": "^17.1.3",
         "ts-jest": "^29.2.5",
         "tsc-alias": "^1.8.10",
-        "typescript": "^5.5.4"
+        "typescript": "^5.6.2"
     },
     "keywords": [
         "youtube",
         "video",
+        "audio",
         "download",
+        "getInfo",
         "ybd-project",
-        "ytdl"
+        "ytdl",
+        "ytdl-core",
+        "secure",
+        "fast",
+        "browser",
+        "serverless",
+        "typescript"
     ],
     "license": "MIT"
 }
