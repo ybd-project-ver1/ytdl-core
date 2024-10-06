@@ -8,3 +8,4 @@ publish.txt
 !/reference/*.bat
 /test/*
 !/test/main.test.ts
+!/test/videoIds.ts
