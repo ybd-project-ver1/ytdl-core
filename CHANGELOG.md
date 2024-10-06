@@ -1,6 +1,11 @@
 # Changelog
 
-## v6.0.0 (2024/MM/DD) *Not released, planned.
+## v6.0.1 (2024/10/06)
+
+### Features
+* **Error:** Changed all Player APIs to include the iOS client's playabilityStatus when they return an error.
+
+## v6.0.0 (2024/10/06).
 
 ### Features
 * **YtdlCore:** Support for use in browsers. (To use, import `@ybd-project/ytdl-core/browser`)

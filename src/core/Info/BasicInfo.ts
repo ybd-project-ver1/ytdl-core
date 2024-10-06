@@ -14,6 +14,7 @@ import { FormatParser } from './parser/Formats';
 import PlayerApi from './apis/Player';
 import NextApi from './apis/Next';
 import InfoExtras from './Extras';
+import { UnrecoverableError } from '../errors';
 
 /* Private Constants */
 const AGE_RESTRICTED_URLS = ['support.google.com/youtube/?p=age_restrictions', 'youtube.com/t/community_guidelines'],
@@ -119,7 +120,7 @@ async function _getBasicInfo(id: string, options: InternalDownloadOptions, isFro
         HTML5_PLAYER_URL = HTML5_PLAYER_RESPONSE.url;
 
     if (!HTML5_PLAYER_URL) {
-        throw new Error(`HTML5Player was not found, please report it via Issues (${SHIM.info.issuesUrl}).`);
+        throw new UnrecoverableError(`HTML5Player was not found, please report it via Issues (${SHIM.info.issuesUrl}).`);
     }
 
     /* Initialization */

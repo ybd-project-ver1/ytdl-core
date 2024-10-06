@@ -30,8 +30,6 @@ import { Logger } from '@/utils/Log';
 
 import ApiBase from './Base';
 
-const CONTINUES_NOT_POSSIBLE_ERRORS = ['This video is private'];
-
 export default class PlayerApi {
     static async getApiResponses(playerApiParams: YTDL_ClientsParams, clients: Array<YTDL_ClientTypes>): Promise<{ isMinimalMode: boolean; responses: PlayerApiResponses }> {
         const PLAYER_API_PROMISE = {
@@ -66,8 +64,8 @@ export default class PlayerApi {
         if (IS_MINIMUM_MODE) {
             const ERROR_TEXT = `All player APIs responded with an error. (Clients: ${clients.join(', ')})\nFor details, specify \`logDisplay: ["debug", "info", "success", "warning", "error"]\` in the constructor options of the YtdlCore class.`;
 
-            if (PLAYER_API_RESPONSES.ios && (CONTINUES_NOT_POSSIBLE_ERRORS.includes(PLAYER_API_RESPONSES.ios?.playabilityStatus.reason || '') || !PLAYER_API_RESPONSES.ios.videoDetails)) {
-                throw new UnrecoverableError(ERROR_TEXT + `\nNote: This error cannot continue processing. (Details: ${JSON.stringify(PLAYER_API_RESPONSES.ios.playabilityStatus.reason)})`);
+            if (PLAYER_API_RESPONSES.ios && !PLAYER_API_RESPONSES.ios.videoDetails) {
+                throw new UnrecoverableError(ERROR_TEXT + `\nNote: This error cannot continue processing. (Details: ${JSON.stringify(PLAYER_API_RESPONSES.ios.playabilityStatus.reason)})`, PLAYER_API_RESPONSES.ios.playabilityStatus.reason);
             }
 
             if (!PLAYER_API_RESPONSES.web) {
