@@ -44,7 +44,12 @@ async function getHtml5Player(options: YTDL_GetInfoOptions): Promise<Html5Player
         signatureTimestamp = undefined;
 
     try {
-        const IFRAME_API_BODY = await Fetcher.request<string>(Url.getIframeApiUrl(), options);
+        const IFRAME_API_BODY = await Fetcher.request<string>(Url.getIframeApiUrl(), {
+            ...options,
+            requestOptions: {
+                headers: { 'x-browser-channel': 'stable', 'x-browser-copyright': 'Copyright 2024 Google LLC. All rights reserved.', 'x-browser-validation': 'g+9zsjnuPhmKvFM5e6eaEzcB1JY=', 'x-browser-year': '2024' },
+            },
+        });
         playerId = getPlayerId(IFRAME_API_BODY);
     } catch {}
 
