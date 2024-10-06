@@ -41,7 +41,14 @@ function adaptToPlayerJson(id) {
 }
 
 fetch('https://www.youtube.com/iframe_api', {
-    cache: 'no-store'
+    cache: 'no-store',
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+        'x-browser-channel': 'stable',
+        'x-browser-copyright': 'Copyright 2024 Google LLC. All rights reserved.',
+        'x-browser-validation': 'g+9zsjnuPhmKvFM5e6eaEzcB1JY=',
+        'x-browser-year': '2024',
+    },
 })
     .then((res) => res.text())
     .then((data) => {

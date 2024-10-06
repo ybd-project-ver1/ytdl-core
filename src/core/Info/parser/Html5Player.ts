@@ -11,7 +11,7 @@ import { Url } from '@/utils/Url';
 import { CURRENT_PLAYER_ID } from '@/utils/Constants';
 
 const SHIM = Platform.getShim(),
-    GITHUB_API_BASE_URL = `https://api.github.com/repos/${SHIM.info.repo.user}/${SHIM.info.repo.name}/contents/data/player`,
+    GITHUB_API_BASE_URL = `https://raw.githubusercontent.com/${SHIM.info.repo.user}/${SHIM.info.repo.name}/dev/data/player`,
     FileCache = SHIM.fileCache;
 
 function getPlayerId(body?: string): string | null {
@@ -50,7 +50,7 @@ async function getHtml5Player(options: YTDL_GetInfoOptions): Promise<Html5Player
 
     if (!playerId) {
         try {
-            const GITHUB_PLAYER_JSON = await Fetcher.request<{ playerId: string; signatureTimestamp: string }>(GITHUB_API_BASE_URL + '/data.json?ref=dev');
+            const GITHUB_PLAYER_JSON = JSON.parse(await Fetcher.request<string>(GITHUB_API_BASE_URL + '/data.json'));
             playerId = GITHUB_PLAYER_JSON.playerId;
             signatureTimestamp = GITHUB_PLAYER_JSON.signatureTimestamp;
         } catch {}
@@ -61,7 +61,7 @@ async function getHtml5Player(options: YTDL_GetInfoOptions): Promise<Html5Player
     }
 
     const PLAYER_URL = Url.getPlayerJsUrl(playerId),
-        HTML5_PLAYER_BODY = (PLAYER_URL ? await Fetcher.request<string>(PLAYER_URL, options) : '') || (await Fetcher.request<string>(GITHUB_API_BASE_URL + '/base.js?ref=dev')),
+        HTML5_PLAYER_BODY = (PLAYER_URL ? await Fetcher.request<string>(PLAYER_URL, options) : '') || (await Fetcher.request<string>(GITHUB_API_BASE_URL + '/base.js')),
         DATA = {
             url: PLAYER_URL,
             body: HTML5_PLAYER_BODY || null,
