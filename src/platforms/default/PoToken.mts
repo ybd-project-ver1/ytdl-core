@@ -1,5 +1,6 @@
 import { JSDOM } from 'jsdom';
 import { BG, BgConfig } from 'bgutils-js';
+import fetch from 'node-fetch-polyfill';
 
 import NextApi from '@/core/Info/apis/Next.js';
 import { Logger } from '@/utils/Log.js';
@@ -54,20 +55,24 @@ function generatePoToken(): Promise<{ poToken: string; visitorData: string }> {
             return;
         }
 
-        if (CHALLENGE.script) {
-            const SCRIPT = CHALLENGE.script.find((sc) => sc !== null);
-            if (SCRIPT) {
-                new Function(SCRIPT)();
-            }
+        const INTERPRETER_JAVASCRIPT = CHALLENGE.interpreterJavascript.privateDoNotAccessOrElseSafeScriptWrappedValue;
+
+        if (INTERPRETER_JAVASCRIPT) {
+            new Function(INTERPRETER_JAVASCRIPT)();
         } else {
-            Logger.debug('<warning>Unable to load Botguard.</warning>');
+            Logger.debug('<warning>Unable to load VM.</warning>');
+            resolve({
+                poToken: '',
+                visitorData: '',
+            });
+            return;
         }
 
-        const PO_TOKEN = await BG.PoToken.generate({
-            program: CHALLENGE.challenge,
+        const PO_TOKEN = (await BG.PoToken.generate({
+            program: CHALLENGE.program,
             globalName: CHALLENGE.globalName,
             bgConfig: BG_CONFIG,
-        });
+        })).poToken;
 
         Logger.debug(`[ PoToken ]: <success>Successfully</success> generated a poToken. (${PO_TOKEN})`);
         resolve({
