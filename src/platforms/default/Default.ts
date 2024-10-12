@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import fetch from 'node-fetch-polyfill';
 
 import { Platform } from '@/platforms/Platform';
 import { CacheWithMap, YtdlCore_Cache } from '@/platforms/utils/Classes';

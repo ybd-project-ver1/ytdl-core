@@ -1,6 +1,5 @@
-type InternalDownloadOptionsBase = Omit<InternalDownloadOptions, 'streamType'>;
-
 import { Readable } from 'readable-stream';
+import { ReadableStream } from 'web-streams-polyfill';
 
 import type { YTDL_ClientTypes, YTDL_DefaultStreamType, YTDL_NodejsStreamType, YTDL_VideoFormat, YTDL_VideoInfo } from '@/types';
 import { InternalDownloadOptions } from '@/core/types';
@@ -171,7 +170,7 @@ async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalD
             throw new Error(`Download failed with status code <warning>"${RESPONSE.status}"</warning>.`);
         }
 
-        const BODY = RESPONSE.body;
+        const BODY = RESPONSE.body as any;
 
         if (!BODY) {
             throw new Error('Failed to retrieve response body.');
@@ -229,7 +228,7 @@ async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalD
                             throw new Error(`Download failed with status code <warning>"${RESPONSE.status}"</warning>.`);
                         }
 
-                        const BODY = RESPONSE.body;
+                        const BODY = RESPONSE.body as any;
 
                         if (!BODY) {
                             throw new Error('Failed to retrieve response body.');

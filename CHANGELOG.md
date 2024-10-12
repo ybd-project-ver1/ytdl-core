@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.0.2 (2024/10/11)
+
+### Change
+
+* **PoToken:** Updated the version of the BgUtils package.
+
+### Bug Fixes
+* **NTransform:** Fixed regular expression for NTransform analysis.
+* **Header API:** Fixed an issue where Headers could not be used with Node.js v16.
+
 ## v6.0.1 (2024/10/06)
 
 ### Features

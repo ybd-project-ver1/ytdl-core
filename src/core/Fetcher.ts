@@ -1,9 +1,11 @@
+import { Headers } from 'headers-polyfill';
+
 import type { YTDL_RequestOptions } from '@/types/Options';
 import { Platform } from '@/platforms/Platform';
 import { Logger } from '@/utils/Log';
+import { UserAgent } from '@/utils/UserAgents';
 
 import { RequestError } from './errors';
-import { UserAgent } from '@/utils/UserAgents';
 
 class Fetcher {
     static async fetch(url: string, options?: RequestInit, noProxyAdaptation = false): Promise<Response> {
@@ -45,7 +47,7 @@ class Fetcher {
 
         return await SHIM.fetcher(url, {
             method: options?.method || 'GET',
-            headers: HEADERS,
+            headers: HEADERS as any,
             body: options?.body?.toString(),
         });
     }
