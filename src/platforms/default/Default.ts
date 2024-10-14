@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import fetch from 'node-fetch-polyfill';
+import { ReadableStream } from 'stream/web';
+import fetch from 'node-fetch';
+import { Headers } from 'headers-polyfill';
 
 import { Platform } from '@/platforms/Platform';
 import { CacheWithMap, YtdlCore_Cache } from '@/platforms/utils/Classes';
@@ -141,7 +143,7 @@ Platform.load({
     server: true,
     cache: new CacheWithMap(),
     fileCache: new FileCache(),
-    fetcher: (url, options) => fetch(url, options),
+    fetcher: fetch as unknown as typeof globalThis.fetch,
     poToken: () => Promise.resolve({ poToken: '', visitorData: '' }),
     options: {
         download: {
@@ -174,6 +176,10 @@ Platform.load({
             name: REPO_NAME,
         },
         issuesUrl: ISSUES_URL,
+    },
+    polyfills: {
+        Headers: Headers as unknown as typeof globalThis.Headers,
+        ReadableStream: ReadableStream as unknown as typeof globalThis.ReadableStream,
     },
 });
 

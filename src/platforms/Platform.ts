@@ -32,6 +32,10 @@ interface YtdlCore_Shim {
         };
         issuesUrl: string;
     };
+    polyfills: {
+        Headers: typeof Headers;
+        ReadableStream: typeof ReadableStream;
+    }
 }
 
 export class Platform {

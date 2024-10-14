@@ -1,13 +1,13 @@
 import { JSDOM } from 'jsdom';
 import { BG, BgConfig } from 'bgutils-js';
-import fetch from 'node-fetch-polyfill';
+import fetch from 'node-fetch';
 
 import NextApi from '@/core/Info/apis/Next.js';
 import { Logger } from '@/utils/Log.js';
 
 const DOM = new JSDOM(),
     BG_CONFIG: BgConfig = {
-        fetch: (url, options) => fetch(url, options),
+        fetch: fetch as unknown as typeof globalThis.fetch,
         globalObj: globalThis,
         identifier: '',
         requestKey: 'O43z0dpjhgX20SCx4KAo',
@@ -68,11 +68,13 @@ function generatePoToken(): Promise<{ poToken: string; visitorData: string }> {
             return;
         }
 
-        const PO_TOKEN = (await BG.PoToken.generate({
-            program: CHALLENGE.program,
-            globalName: CHALLENGE.globalName,
-            bgConfig: BG_CONFIG,
-        })).poToken;
+        const PO_TOKEN = (
+            await BG.PoToken.generate({
+                program: CHALLENGE.program,
+                globalName: CHALLENGE.globalName,
+                bgConfig: BG_CONFIG,
+            })
+        ).poToken;
 
         Logger.debug(`[ PoToken ]: <success>Successfully</success> generated a poToken. (${PO_TOKEN})`);
         resolve({

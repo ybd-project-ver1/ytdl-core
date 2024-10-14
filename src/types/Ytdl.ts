@@ -1,5 +1,6 @@
 import { Readable } from 'readable-stream';
-import { ReadableStream } from 'web-streams-polyfill';
+
+import { Platform } from '@/platforms/Platform';
 
 import type { YT_Itag, YT_MicroformatRenderer, YT_NextApiResponse, YT_PlayerApiResponse, YT_Quality, YT_QualityLabel, YT_StreamingAdaptiveFormat, YT_Thumbnail } from './YouTube';
 import type { YTDL_ClientTypes } from './Clients';
@@ -158,5 +159,5 @@ export type YTDL_Constructor = Omit<YTDL_DownloadOptions, 'format'> & {
     noUpdate?: boolean;
 };
 
-export class YTDL_DefaultStreamType extends ReadableStream<any> {}
+export class YTDL_DefaultStreamType extends Platform.getShim().polyfills.ReadableStream<any> {}
 export class YTDL_NodejsStreamType extends Readable {}

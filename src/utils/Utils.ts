@@ -184,7 +184,6 @@ function generateClientPlaybackNonce(length: number) {
 /** Check for updates. */
 let updateWarnTimes = 0;
 let lastUpdateCheck = 0;
-type GitHubPkgResponse = { content: string; encoding: BufferEncoding };
 function checkForUpdates() {
     const SHIM = Platform.getShim(),
         YTDL_NO_UPDATE = SHIM.options.other.noUpdate;
@@ -192,16 +191,12 @@ function checkForUpdates() {
     if (!YTDL_NO_UPDATE && Date.now() - lastUpdateCheck >= UPDATE_INTERVAL) {
         lastUpdateCheck = Date.now();
 
-        const PKG_GITHUB_API_URL = `https://api.github.com/repos/${SHIM.info.repo.user}/${SHIM.info.repo.name}/contents/package.json`;
-        Fetcher.request<GitHubPkgResponse>(PKG_GITHUB_API_URL, {
+        const PKG_GITHUB_API_URL = `https://raw.githubusercontent.com/${SHIM.info.repo.user}/${SHIM.info.repo.name}/dev/package.json`;
+        Fetcher.request<string>(PKG_GITHUB_API_URL, {
             requestOptions: { headers: { 'User-Agent': 'Chromium";v="112", "Microsoft Edge";v="112", "Not:A-Brand";v="99' } },
         }).then(
             (response) => {
-                if (!response.content) {
-                    throw new Error('No content in response');
-                }
-
-                const PKG_FILE = JSON.parse(atob(response.content));
+                const PKG_FILE = JSON.parse(response);
 
                 if (PKG_FILE.version !== VERSION && updateWarnTimes++ < 5) {
                     Logger.warning('@ybd-project/ytdl-core is out of date! Update with "npm install @ybd-project/ytdl-core@latest".');

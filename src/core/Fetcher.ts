@@ -1,5 +1,3 @@
-import { Headers } from 'headers-polyfill';
-
 import type { YTDL_RequestOptions } from '@/types/Options';
 import { Platform } from '@/platforms/Platform';
 import { Logger } from '@/utils/Log';
@@ -32,7 +30,7 @@ class Fetcher {
 
         Logger.debug(`[ Request ]: <magenta>${options?.method || 'GET'}</magenta> -> ${url}`);
 
-        const HEADERS = new Headers();
+        const HEADERS = new SHIM.polyfills.Headers();
         if (options?.headers) {
             Object.entries(options.headers).forEach(([key, value]) => {
                 if (value) {
