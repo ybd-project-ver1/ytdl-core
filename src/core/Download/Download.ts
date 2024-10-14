@@ -1,5 +1,5 @@
 import { Readable } from 'readable-stream';
-import { ReadableStream } from 'web-streams-polyfill';
+import type { PassThrough } from 'stream';
 
 import type { YTDL_ClientTypes, YTDL_DefaultStreamType, YTDL_NodejsStreamType, YTDL_VideoFormat, YTDL_VideoInfo } from '@/types';
 import { InternalDownloadOptions } from '@/core/types';
@@ -12,15 +12,16 @@ import { Platform } from '@/platforms/Platform';
 import { UserAgent } from '@/utils/UserAgents';
 
 const DOWNLOAD_REQUEST_OPTIONS: RequestInit = {
-    method: 'GET',
-    headers: {
-        accept: '*/*',
-        origin: 'https://www.youtube.com',
-        referer: 'https://www.youtube.com',
-        DNT: '?1',
+        method: 'GET',
+        headers: {
+            accept: '*/*',
+            origin: 'https://www.youtube.com',
+            referer: 'https://www.youtube.com',
+            DNT: '?1',
+        },
+        redirect: 'follow',
     },
-    redirect: 'follow',
-};
+    ReadableStream = Platform.getShim().polyfills.ReadableStream;
 
 async function isDownloadUrlValid(format: YTDL_VideoFormat): Promise<{ valid: boolean; reason?: string }> {
     return new Promise((resolve) => {
@@ -100,20 +101,30 @@ function getValidDownloadUrl(formats: YTDL_VideoInfo['formats'], options: Intern
 }
 
 /** Reference: LuanRT/YouTube.js - Utils.ts */
-export async function* streamToIterable(stream: ReadableStream<Uint8Array>) {
-    const READER = stream.getReader();
+export async function* streamToIterable(stream: ReadableStream<Uint8Array> | PassThrough) {
+    if (stream instanceof ReadableStream) {
+        const READER = stream.getReader();
 
-    try {
-        while (true) {
-            const { done, value } = await READER.read();
-            if (done) {
-                return;
+        try {
+            while (true) {
+                const { done, value } = await READER.read();
+                if (done) {
+                    return;
+                }
+
+                yield value;
             }
-
-            yield value;
+        } finally {
+            READER.releaseLock();
         }
-    } finally {
-        READER.releaseLock();
+    } else {
+        try {
+            for await (const CHUNK of stream) {
+                yield CHUNK;
+            }
+        } finally {
+            stream.destroy();
+        }
     }
 }
 
@@ -170,7 +181,7 @@ async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalD
             throw new Error(`Download failed with status code <warning>"${RESPONSE.status}"</warning>.`);
         }
 
-        const BODY = RESPONSE.body as any;
+        const BODY = RESPONSE.body;
 
         if (!BODY) {
             throw new Error('Failed to retrieve response body.');
@@ -222,13 +233,16 @@ async function downloadFromInfoCallback(info: YTDL_VideoInfo, options: InternalD
                             } catch {}
                         }
 
-                        const RESPONSE = await Platform.getShim().fetcher(firstFormatUrl, requestOptions);
+                        const RESPONSE = await Platform.getShim().fetcher(formatUrl, {
+                            ...requestOptions,
+                            signal: cancel.signal,
+                        });
 
                         if (!RESPONSE.ok) {
                             throw new Error(`Download failed with status code <warning>"${RESPONSE.status}"</warning>.`);
                         }
 
-                        const BODY = RESPONSE.body as any;
+                        const BODY = RESPONSE.body;
 
                         if (!BODY) {
                             throw new Error('Failed to retrieve response body.');

@@ -24,7 +24,7 @@ export default {
             return new Response(null, { status: 400, headers: BASE_HEADERS });
         }
 
-        if (req.url.includes('/download/')) {
+        if (req.url.includes('/download')) {
             const C = new URL(REQUEST_URL).searchParams.get('c') || 'WEB',
                 USER_AGENT = USER_AGENTS[C] || USER_AGENTS.DEFAULT;
 

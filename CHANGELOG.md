@@ -1,9 +1,17 @@
 # Changelog
 
+## v6.0.3 (2024/10/14)
+
+### Bug Fixes
+* **ReadableStream:** Fixed stream-related TypeError.
+* **Browser Check:** Corrected browser confirmation behavior
+
+### Change
+* **PoToken:** Updated the version of the BgUtils package.
+
 ## v6.0.2 (2024/10/11)
 
 ### Change
-
 * **PoToken:** Updated the version of the BgUtils package.
 
 ### Bug Fixes

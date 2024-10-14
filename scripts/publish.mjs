@@ -19,7 +19,7 @@ switch (PUBLISH_TYPE) {
         const [MAIN, BETA] = version.split('-beta.'),
             NEW_BETA_VERSION = parseInt(BETA, 10) + 1;
 
-        version = `${MAIN}-beta.${NEW_BETA_VERSION}`;
+        version = `${MAIN}-beta.${NEW_BETA_VERSION || 1}`;
         break;
     }
     default: {

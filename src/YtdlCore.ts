@@ -26,21 +26,21 @@ function isNodeVersionOk(version: string): boolean {
 
 function isBrowserVersionOk(userAgent: string): boolean {
     const PARSED = new UAParser(userAgent).getBrowser(),
-        VERSION = PARSED.version || '',
+        VERSION = parseInt((PARSED.version || '').split('.')[0]),
         BROWSER_NAME = PARSED.name?.toLocaleLowerCase() || '';
 
     if (BROWSER_NAME.includes('chrome')) {
-        return VERSION.startsWith('76');
+        return VERSION >= 76;
     } else if (BROWSER_NAME.includes('edge')) {
-        return VERSION.startsWith('80');
+        return VERSION >= 80;
     } else if (BROWSER_NAME.includes('firefox')) {
-        return VERSION.startsWith('78');
+        return VERSION >= 78;
     } else if (BROWSER_NAME.includes('safari')) {
-        return VERSION.startsWith('14');
+        return VERSION >= 14;
     } else if (BROWSER_NAME.includes('brave')) {
-        return VERSION.startsWith('1');
+        return VERSION >= 1;
     } else if (BROWSER_NAME.includes('opera')) {
-        return VERSION.startsWith('63');
+        return VERSION >= 63;
     } else {
         Logger.debug('[ BrowserCheck ]: The specified UserAgent did not match the following browsers. (Chrome, Edge, FireFox, Safari, Brave, Opera)');
     }

@@ -167,6 +167,10 @@ Platform.load({
         },
         issuesUrl: ISSUES_URL,
     },
+    polyfills: {
+        Headers,
+        ReadableStream,
+    },
 });
 
 import { YtdlCore } from '@/YtdlCore';
