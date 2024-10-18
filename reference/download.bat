@@ -2,17 +2,20 @@
 setlocal
 
 set youtubejs=https://github.com/LuanRT/YouTube.js
+set jinter=https://github.com/LuanRT/Jinter
 set ytdlp=https://github.com/yt-dlp/yt-dlp
 
 for /f "tokens=*" %%i in ('powershell -command "Invoke-RestMethod https://api.github.com/repos/LuanRT/YouTube.js/releases/latest | Select-Object -ExpandProperty tag_name"') do set youtubejs_folder-name=YouTube.js_%%i
+for /f "tokens=*" %%j in ('powershell -command "Invoke-RestMethod https://api.github.com/repos/LuanRT/Jinter/releases/latest | Select-Object -ExpandProperty tag_name"') do set jinter_folder-name=Jinter_%%j
 for /f "tokens=*" %%j in ('powershell -command "Invoke-RestMethod https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest | Select-Object -ExpandProperty tag_name"') do set ytdlp_folder-name=yt-dlp_%%j
 
 :first
 
-echo [36m1[0m�FLuanRT/YouTube.js �݂̂� GitHub ����N���[�����܂��B
-echo [36m2[0m�Fyt-dlp/yt-dlp �݂̂� GitHub ����N���[�����܂��B
-echo [36m3[0m�F��L�̗����� GitHub ����N���[�����܂��B
-echo �ȏ��3������s������������ԍ��œ��́F
+echo [36m1[0m : Clone only LuanRT/YouTube.js from GitHub.
+echo [36m2[0m : Clone only LuanRT/Jinter from GitHub.
+echo [36m3[0m : Clone only yt-dlp/yt-dlp from GitHub.
+echo [36m4[0m : Clone both of the above from GitHub.
+echo Enter the number of the process you want to execute from the above three:
 set /p process=
 
 if "%process%" == "1" (
@@ -20,14 +23,18 @@ if "%process%" == "1" (
 )
 
 if "%process%" == "2" (
-    goto ytdlp
+    goto jinter
 )
 
 if "%process%" == "3" (
+    goto ytdlp
+)
+
+if "%process%" == "4" (
     goto all
 )
 
-echo [33m�y���Ӂz[0m ���͂ł���l�́u1�v�u2�v�u3�v�̂����ꂩ�ł��B
+echo [33m[Warning][0m Values that can be entered are "1", "2", or "3".
 echo.
 goto first
 
@@ -35,6 +42,12 @@ goto first
 call :delete-youtubejs-folder
 
 call git clone %youtubejs% %youtubejs_folder-name%
+goto end
+
+:jinter
+call :delete-jinter-folder
+
+call git clone %jinter% %jinter_folder-name%
 goto end
 
 :ytdlp
@@ -45,16 +58,19 @@ goto ytdlp-postprocess
 
 :all
 call :delete-youtubejs-folder
+call :delete-jinter-folder
 call :delete-ytdlp-folder
 
 call git clone %youtubejs% %youtubejs_folder-name%
+echo.
+call git clone %jinter% %jinter_folder-name%
 echo.
 call git clone %ytdlp% %ytdlp_folder-name%
 goto ytdlp-postprocess
 
 :end
 echo.
-echo [32m�y�����z[0m �N���[�������͐���Ɋ������܂����B
+echo [32m[Success][0m Cloning process completed successfully.
 
 pause
 exit
@@ -77,18 +93,22 @@ goto end
 for /d %%D in (YouTube.js*) do (
     if exist %%D (
         rmdir /s /q %%D
-        echo [32m�y�����z[0m �iYouTube.js�j�����̃t�H���_�͐���ɍ폜����܂����B
+        echo [32m[Success][0m ^(YouTube.js^) Existing folder successfully deleted.
     )
 )
 
-goto youtubejs-folder-postprocess
+:delete-jinter-folder
+for /d %%D in (Jinter*) do (
+    if exist %%D (
+        rmdir /s /q %%D
+        echo [32m[Success][0m ^(Jinter^) Existing folder successfully deleted.
+    )
+)
 
 :delete-ytdlp-folder
 for /d %%D in (yt-dlp*) do (
     if exist %%D (
         rmdir /s /q %%D
-        echo [32m�y�����z[0m �iyt-dlp�j�����̃t�H���_�͐���ɍ폜����܂����B
+        echo [32m[Success][0m ^(yt-dlp^) Existing folder successfully deleted.
     )
 )
-
-:youtubejs-folder-postprocess

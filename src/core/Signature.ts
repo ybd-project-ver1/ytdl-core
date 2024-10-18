@@ -1,6 +1,7 @@
 import { YT_StreamingAdaptiveFormat } from '@/types';
 
 import { Platform } from '@/platforms/Platform';
+import Jinter from '@/dependencies/Jinter';
 
 import { Logger } from '@/utils/Log';
 
@@ -44,8 +45,7 @@ const N_TRANSFORM_REGEXP = 'function\\(\\s*(\\w+)\\s*\\)\\s*\\{' + 'var\\s*(\\w+
 
 const SIGNATURE_TIMESTAMP_REGEX = /signatureTimestamp:(\d+)/g,
     SHIM = Platform.getShim(),
-    FILE_CACHE = SHIM.fileCache,
-    Jinter = require('jintr').default;
+    FILE_CACHE = SHIM.fileCache;
 
 let decipherWarning = false,
     nTransformWarning = false;

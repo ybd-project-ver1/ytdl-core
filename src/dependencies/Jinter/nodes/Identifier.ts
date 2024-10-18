@@ -1,0 +1,18 @@
+import type ESTree from 'estree';
+import BaseJSNode from './BaseJSNode.js';
+
+export default class Identifier extends BaseJSNode<ESTree.Identifier> {
+  public run() {
+    if (this.visitor.listeners[this.node.name]) {
+      const cb = this.visitor.listeners[this.node.name](this.node, this.visitor);
+      if (cb !== '__continue_exec') {
+        return cb;
+      }
+    }
+
+    if (this.visitor.scope.has(this.node.name))
+      return this.visitor.scope.get(this.node.name);
+
+    return this.node.name;
+  }
+}

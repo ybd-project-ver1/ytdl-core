@@ -2,18 +2,23 @@ name: Update Player Data
 
 on:
     schedule:
-        - cron: '0 0 * * *' # 毎日午前0時に実行
-    workflow_dispatch: # 手動実行のオプション
-
+        - cron: '0 0 * * *'
+    workflow_dispatch:
+    push:
+        branches:
+            - dev
 jobs:
     update-player-data:
         runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/dev' # devブランチでのみ実行
+
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+            - uses: actions/checkout@v3
+              with:
+                  ref: dev
 
             - name: Set up Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v3
               with:
                   node-version: '20'
 
@@ -29,4 +34,4 @@ jobs:
                   git config --local user.name "GitHub Action"
                   git add data/player/data.json
                   git add data/player/base.js
-                  git diff --quiet && git diff --staged --quiet || (git commit -m "Update player data" && git push origin dev)
+                  git diff --quiet && git diff --staged --quiet || (git commit -m "Update player data" && git push)

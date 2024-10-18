@@ -93,7 +93,7 @@ class YtdlCore {
     public version = VERSION;
 
     /* Constructor */
-    constructor({ hl, gl, rewriteRequest, poToken, disablePoTokenAutoGeneration, visitorData, includesPlayerAPIResponse, includesNextAPIResponse, includesOriginalFormatData, includesRelatedVideo, clients, disableDefaultClients, oauth2Credentials, parsesHLSFormat, originalProxy, quality, filter, excludingClients, includingClients, range, begin, liveBuffer, highWaterMark, IPv6Block, dlChunkSize, streamType, disableBasicCache, disableFileCache, fetcher, logDisplay, noUpdate }: YTDL_Constructor = {}) {
+    constructor({ hl, gl, rewriteRequest, poToken, disablePoTokenAutoGeneration, visitorData, includesPlayerAPIResponse, includesNextAPIResponse, includesOriginalFormatData, includesRelatedVideo, clients, disableDefaultClients, oauth2Credentials, parsesHLSFormat, originalProxy, quality, filter, excludingClients, includingClients, range, begin, liveBuffer, highWaterMark, IPv6Block, dlChunkSize, streamType, disableBasicCache, disableFileCache, fetcher, logDisplay, noUpdate, disableInitialSetup }: YTDL_Constructor = {}) {
         const SHIM = Platform.getShim();
 
         /* Other Options */
@@ -137,10 +137,6 @@ class YtdlCore {
             Logger.debug(`The query name <debug>"${this.originalProxy.urlQueryName || 'url'}"</debug> is used to specify the URL in the request. <blue>(?url=...)</blue>`);
         }
 
-        this.setPoToken(poToken);
-        this.setVisitorData(visitorData);
-        this.setOAuth2(oauth2Credentials || null);
-
         /* Format Selection Options */
         this.quality = quality || undefined;
         this.filter = filter || undefined;
@@ -156,10 +152,16 @@ class YtdlCore {
         this.dlChunkSize = dlChunkSize || undefined;
         this.streamType = streamType || 'default';
 
-        if (!this.disablePoTokenAutoGeneration) {
-            this.automaticallyGeneratePoToken();
+        if (!disableInitialSetup) {
+            this.setPoToken(poToken);
+            this.setVisitorData(visitorData);
+            this.setOAuth2(oauth2Credentials || null);
+
+            if (!this.disablePoTokenAutoGeneration) {
+                this.automaticallyGeneratePoToken();
+            }
+            this.initializeHtml5PlayerCache();
         }
-        this.initializeHtml5PlayerCache();
 
         /* Version Check */
         if (SHIM.runtime === 'default') {
@@ -220,13 +222,20 @@ class YtdlCore {
         }
     }
 
+    private initializeHtml5PlayerCache() {
+        const HTML5_PLAYER = FileCache.get<{ playerUrl: string }>('html5Player');
+
+        if (!HTML5_PLAYER) {
+            Logger.debug('To speed up processing, html5Player and signatureTimestamp are pre-fetched and cached.');
+            getHtml5Player({});
+        }
+    }
+
     private automaticallyGeneratePoToken() {
         if (!this.poToken && !this.visitorData) {
             Logger.debug('Since PoToken and VisitorData are <warning>not specified</warning>, they are generated <info>automatically</info>.');
 
-            const generatePoToken = Platform.getShim().poToken;
-
-            generatePoToken()
+            this.generatePoToken()
                 .then(({ poToken, visitorData }) => {
                     this.poToken = poToken;
                     this.visitorData = visitorData;
@@ -235,15 +244,6 @@ class YtdlCore {
                     FileCache.set('visitorData', this.visitorData || '', { ttl: 60 * 60 * 24 });
                 })
                 .catch(() => {});
-        }
-    }
-
-    private initializeHtml5PlayerCache() {
-        const HTML5_PLAYER = FileCache.get<{ playerUrl: string }>('html5Player');
-
-        if (!HTML5_PLAYER) {
-            Logger.debug('To speed up processing, html5Player and signatureTimestamp are pre-fetched and cached.');
-            getHtml5Player({});
         }
     }
 
@@ -288,6 +288,20 @@ class YtdlCore {
         }
 
         return INTERNAL_OPTIONS;
+    }
+
+    public generatePoToken(): Promise<{ poToken: string; visitorData: string }> {
+        return new Promise((resolve, reject) => {
+            const generatePoToken = Platform.getShim().poToken;
+
+            generatePoToken()
+                .then((data) => {
+                    resolve(data);
+                })
+                .catch((err) => {
+                    reject(err);
+                });
+        });
     }
 
     /** TIP: The options specified in new YtdlCore() are applied by default. (The function arguments specified will take precedence.) */
