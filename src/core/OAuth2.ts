@@ -102,7 +102,6 @@ export class OAuth2 {
                 'User-Agent': UserAgent.tv,
                 Referer: Url.getTvUrl(),
             },
-            SHIM = Platform.getShim(),
             YT_TV_RESPONSE = await Fetcher.fetch(Url.getTvUrl(), {
                 headers: HEADERS,
             });

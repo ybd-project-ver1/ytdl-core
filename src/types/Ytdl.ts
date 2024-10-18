@@ -157,6 +157,7 @@ export type YTDL_Constructor = Omit<YTDL_DownloadOptions, 'format'> & {
     fetcher?: (url: URL | RequestInfo, options?: RequestInit) => Promise<Response>;
     logDisplay?: Array<'debug' | 'info' | 'success' | 'warning' | 'error'> | 'none';
     noUpdate?: boolean;
+    disableInitialSetup?: boolean;
 };
 
 export class YTDL_DefaultStreamType extends Platform.getShim().polyfills.ReadableStream<any> {}

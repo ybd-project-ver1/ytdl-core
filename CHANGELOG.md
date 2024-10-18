@@ -1,5 +1,19 @@
 # Changelog
 
+## v6.0.5 (2024/10/16)
+
+### Features
+* **Serverless:** Improved the possibility of exceeding the CPU time limit when deploying to Cloudflare Workers (free of charge).
+* **YtdlCore:** Added `disableInitialSetup` option to disable setup when creating an instance of YtdlCore.
+
+### Change
+* **Download URL:** Changed to output to debug log which URL is being requested when downloading
+
+## v6.0.4 (2024/10/16)
+
+### Bug Fixes
+* **Jinter:** Stop log output of internally used Jinter
+
 ## v6.0.3 (2024/10/14)
 
 ### Bug Fixes
