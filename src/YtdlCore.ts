@@ -152,17 +152,6 @@ class YtdlCore {
         this.dlChunkSize = dlChunkSize || undefined;
         this.streamType = streamType || 'default';
 
-        if (!disableInitialSetup) {
-            this.setPoToken(poToken);
-            this.setVisitorData(visitorData);
-            this.setOAuth2(oauth2Credentials || null);
-
-            if (!this.disablePoTokenAutoGeneration) {
-                this.automaticallyGeneratePoToken();
-            }
-            this.initializeHtml5PlayerCache();
-        }
-
         /* Version Check */
         if (SHIM.runtime === 'default') {
             if (!isNodeVersionOk(process.version)) {
@@ -174,12 +163,27 @@ class YtdlCore {
             }
         }
 
+        /* Async Initial setup */
+        this.init(disableInitialSetup, poToken, visitorData, oauth2Credentials);
+
         /* Load */
         SHIM.options.download = { hl: this.hl, gl: this.gl, rewriteRequest: this.rewriteRequest, poToken: this.poToken, disablePoTokenAutoGeneration: this.disablePoTokenAutoGeneration, visitorData: this.visitorData, includesPlayerAPIResponse: this.includesPlayerAPIResponse, includesNextAPIResponse: this.includesNextAPIResponse, includesOriginalFormatData: this.includesOriginalFormatData, includesRelatedVideo: this.includesRelatedVideo, clients: this.clients, disableDefaultClients: this.disableDefaultClients, oauth2Credentials, parsesHLSFormat: this.parsesHLSFormat, originalProxy: this.originalProxy, quality: this.quality, filter: this.filter, excludingClients: this.excludingClients, includingClients: this.includingClients, range: this.range, begin: this.begin, liveBuffer: this.liveBuffer, highWaterMark: this.highWaterMark, IPv6Block: this.IPv6Block, dlChunkSize: this.dlChunkSize };
         Platform.load(SHIM);
     }
 
     /* Setup */
+    private async init(disableInitialSetup?: boolean, poToken?: string, visitorData?: string, oauth2Credentials?: YTDL_OAuth2Credentials) {
+        if (!disableInitialSetup) {
+            await this.setPoToken(poToken);
+            await this.setVisitorData(visitorData);
+            await this.setOAuth2(oauth2Credentials || null);
+
+            if (!this.disablePoTokenAutoGeneration) {
+                this.automaticallyGeneratePoToken();
+            }
+            await this.initializeHtml5PlayerCache();
+        }
+    }
     private async setPoToken(poToken?: string) {
         const PO_TOKEN_CACHE = await FileCache.get<string>('poToken');
 
@@ -222,8 +226,8 @@ class YtdlCore {
         }
     }
 
-    private initializeHtml5PlayerCache() {
-        const HTML5_PLAYER = FileCache.get<{ playerUrl: string }>('html5Player');
+    private async initializeHtml5PlayerCache() {
+        const HTML5_PLAYER = await FileCache.get<{ playerUrl: string }>('html5Player');
 
         if (!HTML5_PLAYER) {
             Logger.debug('To speed up processing, html5Player and signatureTimestamp are pre-fetched and cached.');
